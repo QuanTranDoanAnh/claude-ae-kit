@@ -1,0 +1,11 @@
+{
+  "name": "ae-kit-marketplace",
+  "owner": { "name": "Albert Tran" },
+  "plugins": [
+    {
+      "name": "ae-kit",
+      "source": "./plugins/ae-kit",
+      "description": "Agentic Engineering kit: spec-anchored workflow with independent evaluator and ratchet."
+    }
+  ]
+}
