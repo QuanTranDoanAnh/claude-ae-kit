@@ -3,7 +3,7 @@ name: replan
 description: Cập nhật tầng product context (docs/product/mission.md, tech.md, roadmap.md) giữa các sprint — đồng bộ roadmap với task done, thêm/bỏ feature, ghi lựa chọn kỹ thuật đã loại, chép O decided từ brownfield vào tech.md. KHÔNG được sửa CLAUDE.md (việc của ratchet) hay requirements.md (việc của intake/specify).
 disable-model-invocation: true
 argument-hint: "[mô tả thay đổi, hoặc trống để replan định kỳ sau G5]"
-allowed-tools: Read Write Edit Glob Grep Bash(git *) Bash(date *) Bash(python3 *)
+allowed-tools: Read Write Edit Glob Grep Bash(git *) Bash(date *) Bash(bash *)
 ---
 
 Chạy sau khi G5 của một sprint passed, hoặc khi chủ dự án muốn đổi hướng (`$0`).

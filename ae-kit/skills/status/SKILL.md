@@ -2,11 +2,11 @@
 name: status
 description: Checklist 5 quality gate (G1 spec → G2 plan → G3 contract → G4 evidence → G5 merge) từ spec/gates.yaml, kèm tình trạng tầng luật (CLAUDE.md /40 dòng, dòng thiếu nguồn), brownfield O chưa phân loại, tiến độ roadmap, câu hỏi đang mở, và đúng một lệnh nên chạy tiếp. Chỉ đọc, không ghi.
 disable-model-invocation: true
-allowed-tools: Read Glob Grep Bash(grep *) Bash(ls *) Bash(python3 *)
+allowed-tools: Read Glob Grep Bash(grep *) Bash(ls *) Bash(bash *)
 ---
 
 ```!
-python3 "${CLAUDE_PLUGIN_ROOT}/scripts/gates.py" show 2>&1
+bash "${CLAUDE_PLUGIN_ROOT}/scripts/py" "${CLAUDE_PLUGIN_ROOT}/scripts/gates.py" show 2>&1
 echo
 echo "== requirements by status =="; grep -oE '\| (proposed|accepted|implemented|verified) \|' spec/requirements.md 2>/dev/null | sort | uniq -c
 echo "== tasks =="; grep -cE '^- \[x\] T' spec/tasks.md 2>/dev/null | sed 's/^/done: /'; grep -cE '^- \[ \] T' spec/tasks.md 2>/dev/null | sed 's/^/todo: /'

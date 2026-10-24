@@ -3,10 +3,10 @@ name: approve
 description: Người duyệt một quality gate (G1 spec, G2 plan, G5 merge) — chỉ cho phép duyệt khi mọi ô máy của gate đó đã xanh trong spec/gates.yaml (scripts/gates.py kiểm, không tick tay). Dùng sau khi đã đọc artifact của gate. G3/G4 là gate máy, không duyệt tay.
 disable-model-invocation: true
 argument-hint: "<G1|G2|G5> [--force \"<lý do>\"]"
-allowed-tools: Read Edit Bash(python3 *) Bash(git *) Glob Grep
+allowed-tools: Read Edit Bash(bash *) Bash(git *) Glob Grep
 ---
 
-Duyệt gate `$0`. `G=python3 "${CLAUDE_PLUGIN_ROOT}/scripts/gates.py"`.
+Duyệt gate `$0`. `G=bash "${CLAUDE_PLUGIN_ROOT}/scripts/py" "${CLAUDE_PLUGIN_ROOT}/scripts/gates.py"` (viết tắt `$G` bên dưới; luôn gọi qua wrapper `scripts/py` vì `python3` có thể không chạy trên Windows).
 
 ## Nguyên tắc
 Bạn KHÔNG tự tick ô nào trong `checks`. `gates.py approve` từ chối nếu còn ô chưa xanh; khi đó bạn liệt kê ô đỏ và lệnh sửa, rồi DỪNG. Người có thể ép bằng `--force "<lý do>"`; lý do được lưu vào gate để ratchet nhìn thấy.

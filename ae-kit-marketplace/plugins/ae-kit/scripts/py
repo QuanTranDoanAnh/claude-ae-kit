@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+# Wrapper chọn trình thông dịch Python chạy được trên máy này, rồi chạy script được truyền vào.
+# Lý do: trên Windows, `python3` có thể là stub của Microsoft Store (thoát mã 9009, không chạy gì).
+# Thứ tự thử: $AE_PYTHON (nếu người đặt) → python3 → python → py -3.
+# Dùng: bash "${CLAUDE_PLUGIN_ROOT}/scripts/py" "${CLAUDE_PLUGIN_ROOT}/scripts/gates.py" show
+set -uo pipefail
+pick=""
+try() { "$@" -c "import sys; sys.exit(0)" >/dev/null 2>&1 && pick="$*"; }
+[ -n "${AE_PYTHON:-}" ] && try $AE_PYTHON
+[ -z "$pick" ] && try python3
+[ -z "$pick" ] && try python
+[ -z "$pick" ] && try py -3
+if [ -z "$pick" ]; then
+  echo "ae-kit: không tìm thấy Python chạy được (đã thử python3, python, py -3). Cài Python 3 hoặc đặt AE_PYTHON=<lệnh>." >&2
+  exit 1
+fi
+exec $pick "$@"

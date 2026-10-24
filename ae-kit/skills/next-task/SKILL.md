@@ -7,7 +7,7 @@ allowed-tools: Read Write Edit Glob Grep Bash
 
 ## Điều kiện vào (tự động)
 ```!
-python3 "${CLAUDE_PLUGIN_ROOT}/scripts/gates.py" short 2>&1
+bash "${CLAUDE_PLUGIN_ROOT}/scripts/py" "${CLAUDE_PLUGIN_ROOT}/scripts/gates.py" short 2>&1
 ```
 - `G3_contract.status` phải là `passed` cho sprint hiện tại. Không → DỪNG: "Sprint chưa có contract — chạy `/ae-kit:contract <N>`".
 - `G4_evidence.status` là `blocked` → DỪNG: "G4 bị khoá vì vượt retry. Cần người quyết (sửa spec / chia nhỏ task / `/ae-kit:ratchet`), rồi `gates.py set G4_evidence.status pending`."

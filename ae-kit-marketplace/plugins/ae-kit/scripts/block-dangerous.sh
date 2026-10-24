@@ -4,7 +4,7 @@
 set -euo pipefail
 
 input="$(cat)"
-cmd="$(printf '%s' "$input" | python3 -c 'import json,sys; d=json.load(sys.stdin); print(d.get("tool_input",{}).get("command",""))' 2>/dev/null || true)"
+cmd="$(printf '%s' "$input" | bash "$(dirname "${BASH_SOURCE[0]}")/py" -c 'import json,sys; d=json.load(sys.stdin); print(d.get("tool_input",{}).get("command",""))' 2>/dev/null || true)"
 
 [ -z "$cmd" ] && exit 0
 

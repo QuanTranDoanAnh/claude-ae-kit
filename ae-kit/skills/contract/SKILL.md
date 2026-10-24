@@ -3,11 +3,11 @@ name: contract
 description: Thương lượng sprint contract cho sprint N — generator đề xuất "done là gì / verify bằng gì", contract-reviewer phản biện, lặp tối đa max_rounds, người dùng chốt. Đây là G3 (gate agent–agent). Chạy TRƯỚC khi viết dòng code nào của sprint.
 disable-model-invocation: true
 argument-hint: "<sprint-number>"
-allowed-tools: Read Write Edit Glob Grep Agent Bash(python3 *)
+allowed-tools: Read Write Edit Glob Grep Agent Bash(bash *)
 ---
 
 Sprint `$0` (nếu trống: lấy `current_sprint` từ gates.py, hoặc sprint đầu tiên còn task `[ ]` trong `spec/tasks.md`).
-`G=python3 "${CLAUDE_PLUGIN_ROOT}/scripts/gates.py"` (viết tắt trong hướng dẫn dưới).
+`G=bash "${CLAUDE_PLUGIN_ROOT}/scripts/py" "${CLAUDE_PLUGIN_ROOT}/scripts/gates.py"` (viết tắt `$G` bên dưới; luôn gọi qua wrapper `scripts/py` vì `python3` có thể không chạy trên Windows).
 
 ## Điều kiện vào
 `$G get G2_plan.status` = `passed`. Không → DỪNG: "G2 chưa passed — `/ae-kit:approve G2`".

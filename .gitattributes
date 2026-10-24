@@ -1,0 +1,4 @@
+*.sh text eol=lf
+ae-kit/scripts/py text eol=lf
+ae-kit-marketplace/plugins/ae-kit/scripts/py text eol=lf
+*.py text eol=lf

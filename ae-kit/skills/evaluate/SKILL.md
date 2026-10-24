@@ -6,7 +6,7 @@ argument-hint: "<sprint-number>"
 allowed-tools: Read Write Edit Glob Grep Bash Agent
 ---
 
-Sprint `$0` (trống → `current_sprint` từ gates.py). `G=python3 "${CLAUDE_PLUGIN_ROOT}/scripts/gates.py"`.
+Sprint `$0` (trống → `current_sprint` từ gates.py). `G=bash "${CLAUDE_PLUGIN_ROOT}/scripts/py" "${CLAUDE_PLUGIN_ROOT}/scripts/gates.py"` (viết tắt `$G` bên dưới; luôn gọi qua wrapper `scripts/py` vì `python3` có thể không chạy trên Windows).
 
 ## Điều kiện vào
 `$G get G3_contract.status` = `passed` và mọi task của sprint đã `[x]` trong `spec/tasks.md`. Còn task `[ ]` → DỪNG: "Còn task chưa xong — `/ae-kit:next-task`". `$G get G4_evidence.status` = `blocked` → DỪNG, in hướng dẫn mở khoá.

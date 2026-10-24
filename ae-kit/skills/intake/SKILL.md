@@ -3,7 +3,7 @@ name: intake
 description: Trích xuất nguồn thành spec/discovery-*.md — T<n> là transcript trao đổi với khách (intake/T<n>-transcript.md), C<n> là codebase hiện có (brownfield). Chỉ TRÍCH XUẤT và ĐẶT CÂU HỎI, không suy diễn requirement. Bước đầu tiên của quy trình.
 disable-model-invocation: true
 argument-hint: "<T<n> | C<n>>"
-allowed-tools: Read Write Glob Grep Bash(ls *) Bash(git *) Bash(wc *) Bash(python3 *)
+allowed-tools: Read Write Glob Grep Bash(ls *) Bash(git *) Bash(wc *) Bash(bash *)
 ---
 
 Nguồn `$0`. Nếu trống: liệt kê transcript trong `intake/` và hỏi; nhắc rằng codebase cũ dùng `C1`.
@@ -30,7 +30,7 @@ Xử lý `intake/$0-transcript.md`.
    - **Câu hỏi Q<n>**: mỗi O không tự giải thích được → đúng một câu, kèm giả định mặc định A<n>. Cột Nhãn để trống.
    - **Những gì codebase KHÔNG nói**: bắt buộc (người dùng, lý do stack, feature bỏ dở, môi trường thật).
    - **Số liệu**: O, Q, test pass/fail, TODO.
-3. Chạy `python3 "${CLAUDE_PLUGIN_ROOT}/scripts/gates.py" set G1_spec.checks.observed_classified false` (còn O nhãn `?`).
+3. Chạy `bash "${CLAUDE_PLUGIN_ROOT}/scripts/py" "${CLAUDE_PLUGIN_ROOT}/scripts/gates.py" set G1_spec.checks.observed_classified false` (còn O nhãn `?`).
 
 ## Kết thúc (cả hai nhánh)
 1. Cập nhật `spec/progress.md` mục "Trạng thái hiện tại": nguồn nào đã intake, số Q mở.

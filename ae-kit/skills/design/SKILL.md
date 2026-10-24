@@ -2,13 +2,13 @@
 name: design
 description: Từ spec/requirements.md đã accepted (G1 passed), viết spec/design.md high-level — entities, hợp đồng giao diện, invariants (ép xuống đúng tầng), quyết định kiến trúc, ánh xạ acceptance criteria. Không đặc tả thuật toán. Đề xuất luật từ invariant qua progress.md, không tự ghi CLAUDE.md.
 disable-model-invocation: true
-allowed-tools: Read Write Edit Glob Grep Bash(python3 *)
+allowed-tools: Read Write Edit Glob Grep Bash(bash *)
 ---
 
 Tạo `spec/design.md` từ template `${CLAUDE_PLUGIN_ROOT}/skills/spec-templates/templates/design.md`, dựa trên `spec/requirements.md`, `CLAUDE.md` và `docs/product/tech.md`.
 
 ## Điều kiện vào
-Chạy `python3 "${CLAUDE_PLUGIN_ROOT}/scripts/gates.py" get G1_spec.status`. Nếu không phải `passed` → DỪNG, in: "G1 chưa passed — chạy `/ae-kit:lint-spec` rồi `/ae-kit:approve G1`". Người có thể nói "cứ làm" → tiếp tục nhưng ghi dòng cảnh báo đầu design.md: `<!-- thiết kế trên spec chưa qua G1 -->`.
+Chạy `bash "${CLAUDE_PLUGIN_ROOT}/scripts/py" "${CLAUDE_PLUGIN_ROOT}/scripts/gates.py" get G1_spec.status`. Nếu không phải `passed` → DỪNG, in: "G1 chưa passed — chạy `/ae-kit:lint-spec` rồi `/ae-kit:approve G1`". Người có thể nói "cứ làm" → tiếp tục nhưng ghi dòng cảnh báo đầu design.md: `<!-- thiết kế trên spec chưa qua G1 -->`.
 
 ## Mức chi tiết — có chủ đích
 Spec này nói **cấu trúc và hợp đồng**, không nói thuật toán. Lý do: nếu đặc tả implementation sớm mà sai, lỗi sẽ lan xuống toàn bộ build. Để generator tự tìm đường đi bên trong hợp đồng.

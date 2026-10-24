@@ -25,4 +25,4 @@ Quy ước chung của mọi artifact:
 - Mọi requirement mang tag nguồn gốc `[src: T<n> §<m>]`, `[src: A<n>]` hoặc `[src: C<n> O<m>]`.
 - Mọi dòng luật trong CLAUDE.md kết thúc bằng `[<nguồn>]`: `[harness]`, `[ratchet #n]`, `[N<n>]`, `[I<n>]`, `[C<n> O<m>]`.
 - Artifact là file trong repo, không phải nội dung chat. Luôn ghi file rồi mới tóm tắt.
-- Trạng thái gate chỉ đổi qua `python3 "${CLAUDE_PLUGIN_ROOT}/scripts/gates.py" ...`, không sửa `gates.yaml` tay.
+- Trạng thái gate chỉ đổi qua `bash "${CLAUDE_PLUGIN_ROOT}/scripts/py" "${CLAUDE_PLUGIN_ROOT}/scripts/gates.py" ...`, không sửa `gates.yaml` tay.

@@ -56,7 +56,9 @@ claude plugin marketplace add ./ae-kit-marketplace
 claude plugin install ae-kit@ae-kit-marketplace
 ```
 
-Yêu cầu: `python3` (không cần thư viện ngoài) và `bash` cho hooks/`gates.py`.
+Yêu cầu: Python 3 (bất kỳ tên `python3`, `python` hay `py -3`; không cần thư viện ngoài) và `bash` (Git Bash trên Windows) cho hooks/`gates.py`. Mọi lời gọi Python đi qua `scripts/py`, wrapper tự dò trình thông dịch chạy được và bỏ qua stub Microsoft Store; đặt `AE_PYTHON=<lệnh>` nếu muốn chỉ định.
+
+**Windows:** mở `claude` ngay trong thư mục dự án (nơi sẽ có `spec/`); `gates.py` tự tìm `spec/gates.yaml` theo `CLAUDE_PROJECT_DIR` → thư mục hiện tại → các thư mục cha. Đừng mở file `.sh` bằng Notepad (đổi LF thành CRLF). Nếu Git bật `core.autocrlf=true`, thêm `.gitattributes` với `*.sh text eol=lf` và `scripts/py text eol=lf`.
 
 ## Dùng cho project mới (greenfield)
 

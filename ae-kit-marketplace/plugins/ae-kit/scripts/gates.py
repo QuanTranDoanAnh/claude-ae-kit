@@ -21,7 +21,21 @@ Exit code: 0 ok · 1 lỗi tham số/file · 2 gate không đạt (để skill d
 """
 import os, re, sys, glob, subprocess, datetime, json
 
-ROOT = os.environ.get("CLAUDE_PROJECT_DIR") or os.getcwd()
+def _find_root():
+    """Thứ tự: CLAUDE_PROJECT_DIR → cwd → cha của cwd (tối đa 4 cấp); chọn nơi đầu tiên có spec/gates.yaml,
+    nếu không có thì cwd (để init tạo mới ở đúng chỗ người đang đứng)."""
+    cands = []
+    env = os.environ.get("CLAUDE_PROJECT_DIR")
+    if env: cands.append(env)
+    cwd = os.getcwd(); cands.append(cwd)
+    d = cwd
+    for _ in range(4):
+        d = os.path.dirname(d)
+        if d and d != cands[-1]: cands.append(d)
+    for c in cands:
+        if os.path.exists(os.path.join(c, "spec", "gates.yaml")): return c
+    return cwd
+ROOT = _find_root()
 GATES = os.path.join(ROOT, "spec", "gates.yaml")
 ORDER = ["G1_spec", "G2_plan", "G3_contract", "G4_evidence", "G5_merge"]
 HUMAN = {"G1_spec", "G2_plan", "G5_merge"}
@@ -56,7 +70,7 @@ def _split_list(inner):
 
 def load():
     if not os.path.exists(GATES):
-        sys.stderr.write(f"gates.yaml không có ở {GATES} — chạy /ae-kit:init hoặc copy template.\n"); sys.exit(1)
+        sys.stderr.write(f"gates.yaml không có ở {GATES} — chạy /ae-kit:init trong thư mục dự án (hoặc copy template).\n"); sys.exit(1)
     header, data, stack = [], {}, [(-1, None)]
     for raw in open(GATES, encoding="utf-8"):
         line = raw.rstrip("\n")

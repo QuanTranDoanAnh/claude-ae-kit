@@ -6,7 +6,7 @@
 set -uo pipefail
 
 input="$(cat)"
-file="$(printf '%s' "$input" | python3 -c 'import json,sys; d=json.load(sys.stdin); print(d.get("tool_input",{}).get("file_path",""))' 2>/dev/null || true)"
+file="$(printf '%s' "$input" | bash "$(dirname "${BASH_SOURCE[0]}")/py" -c 'import json,sys; d=json.load(sys.stdin); print(d.get("tool_input",{}).get("file_path",""))' 2>/dev/null || true)"
 
 root="${CLAUDE_PROJECT_DIR:-$(pwd)}"
 cfg="$root/.ae-kit/check.cmd"

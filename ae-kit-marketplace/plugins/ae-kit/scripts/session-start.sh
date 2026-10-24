@@ -10,7 +10,7 @@ if [ -f "$root/spec/gates.yaml" ]; then
   if printf '%s' "$(cat "$root/spec/gates.yaml")" | grep -q 'status: blocked'; then
     echo "!!! Có gate đang BLOCKED — xem dòng [✗] bên dưới, cần người quyết trước khi làm tiếp."
   fi
-  python3 "$here/gates.py" show 2>&1 || echo "(gates.py lỗi — chạy /ae-kit:status để xem chi tiết)"
+  bash "$here/py" "$here/gates.py" show 2>&1 || echo "(gates.py lỗi — chạy /ae-kit:status để xem chi tiết)"
   echo
 elif [ -d "$root/spec" ]; then
   echo "=== ae-kit: spec/gates.yaml chưa có — chạy /ae-kit:init (an toàn, không ghi đè) để tạo ==="
