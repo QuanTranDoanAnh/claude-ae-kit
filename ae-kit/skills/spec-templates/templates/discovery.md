@@ -13,10 +13,12 @@ Nguồn: `intake/{{SOURCE_ID}}-transcript.md` (ngày {{DATE}}, người tham gia
 |-----------|----------------------|--------|
 
 ## 3. Open Questions (BẮT BUỘC — đây là output chính)
-<!-- Mỗi câu hỏi nêu: vì sao cần hỏi, nếu không hỏi thì ta sẽ phải giả định gì -->
-| ID | Câu hỏi cho khách | Vì sao quan trọng | Giả định mặc định nếu không có câu trả lời |
-|----|-------------------|-------------------|--------------------------------------------|
-| Q1 | ... | ... | A1: ... |
+<!-- Mỗi câu hỏi nêu: vì sao cần hỏi, nếu không hỏi thì ta sẽ phải giả định gì.
+     Cột Nhãn do NGƯỜI điền trước gate 1: send (gửi khách) · assume (chấp nhận A<n>) · defer (để sau, không chặn).
+     gates.py compute G1 đếm Q chưa có nhãn → open_q_classified. -->
+| ID | Câu hỏi cho khách | Vì sao quan trọng | Giả định mặc định nếu không có câu trả lời | Nhãn |
+|----|-------------------|-------------------|--------------------------------------------|------|
+| Q1 | ... | ... | A1: ... | |
 
 ## 4. Mâu thuẫn / mơ hồ phát hiện được
 <!-- Hai statement nói ngược nhau, hoặc một statement có ≥2 cách hiểu -->

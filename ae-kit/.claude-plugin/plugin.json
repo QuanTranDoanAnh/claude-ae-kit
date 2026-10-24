@@ -1,7 +1,7 @@
 {
   "name": "ae-kit",
-  "description": "Agentic Engineering kit: intake → requirements (EARS, traceable) → design → tasks → sprint contract → one-task loop → independent evaluator → ratchet. Spec-anchored workflow for Claude Code.",
-  "version": "0.1.0",
+  "description": "Agentic Engineering kit: intake (transcript | brownfield codebase) → requirements (EARS, traceable) → design → tasks → sprint contract → one-task loop → independent evaluator → ratchet / replan. Two-layer constitution (rules vs product context) and 5 quality gates tracked in spec/gates.yaml by a deterministic script.",
+  "version": "0.2.0",
   "author": {
     "name": "Albert Tran",
     "email": "td.anhquan@gmail.com"
@@ -11,7 +11,10 @@
     "agentic-engineering",
     "harness",
     "evaluator",
-    "workflow"
+    "workflow",
+    "quality-gates",
+    "brownfield",
+    "constitution"
   ],
   "license": "MIT"
 }

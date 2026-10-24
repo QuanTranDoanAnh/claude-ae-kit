@@ -1,0 +1,56 @@
+# spec/gates.yaml — nguồn sự thật về trạng thái quality gate. Sửa qua scripts/gates.py, không sửa tay.
+# Ô "checks" do skill ghi SAU KHI kiểm tra thật. approved_by chỉ do /ae-kit:approve ghi, và chỉ khi mọi ô true.
+# status: pending | blocked | passed.  G1/G2/G5 người duyệt; G3/G4 máy/agent.
+
+project: "{{PROJECT_NAME}}"
+current_sprint: 1
+G1_spec:
+  status: pending
+  checks:
+    lint_clean: false
+    all_R_accepted: false
+    open_q_classified: false
+    observed_classified: true
+  approved_by: null
+  approved_at: null
+  evidence: null
+G2_plan:
+  status: pending
+  checks:
+    every_R_has_task: false
+    every_task_has_R: false
+    every_task_has_done: false
+    first_task_e2e: false
+  blocked_by: []
+  approved_by: null
+  approved_at: null
+  evidence: null
+G3_contract:
+  sprint: 1
+  status: pending
+  checks:
+    reviewer_agreed: false
+    criteria_observable: false
+  rounds: 0
+  max_rounds: 3
+  evidence: null
+G4_evidence:
+  sprint: 1
+  status: pending
+  checks:
+    check_cmd: null
+    e2e: null
+    evaluator_pass_per_R: null
+  retries: 0
+  max_retries: 3
+  evidence: null
+G5_merge:
+  sprint: 1
+  status: pending
+  checks:
+    diff_within_contract: null
+    spec_diff_present_if_behavior_changed: null
+    no_file_outside_task_scope: null
+  approved_by: null
+  approved_at: null
+  evidence: null
