@@ -25,6 +25,6 @@ S1 → S2 → S3
 - 
 
 ## Lịch sử phiên bản
-| P | Ngày | Thay đổi so với bản trước | Nguồn (T<n> §m) |
+| P | Ngày | Thay đổi so với bản trước | Nguồn (T<n> §m / F<n> §m) |
 |---|------|---------------------------|-----------------|
 | P1 | | bản đầu | |

@@ -1,7 +1,7 @@
 # Mission — {{PROJECT_NAME}}
 
 <!-- Tầng PRODUCT CONTEXT, không phải luật. Sửa qua /ae-kit:replan.
-     Mỗi dòng có nguồn: [src: T<n> §<m>] khách nói · [src: C<n> O<m>] codebase · [src: owner <ngày>] chủ dự án quyết. -->
+     Mỗi dòng có nguồn: [src: T<n> §<m>] khách nói · [src: F<n> §<m>] tài liệu khách · [src: C<n> O<m>] codebase · [src: owner <ngày>] chủ dự án quyết. -->
 
 Cập nhật lần cuối: {{DATE}}
 

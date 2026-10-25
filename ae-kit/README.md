@@ -4,11 +4,11 @@
 
 ## Định vị: tầng "delivery governance", không phải framework thay bạn viết code
 
-ae-kit sinh ra cho bối cảnh **làm phần mềm cho khách hàng**: yêu cầu đến từ lời khách (transcript) hoặc codebase cũ, phải truy vết được, có người duyệt ở đúng chỗ, và có biên bản khi bàn giao. Nó quản ba thứ: *yêu cầu đến từ đâu*, *done nghĩa là gì*, và *gate nào đã qua* — rồi để agent tự làm phần còn lại.
+ae-kit sinh ra cho bối cảnh **làm phần mềm cho khách hàng**: yêu cầu đến từ lời khách (transcript), tài liệu khách gửi (SRS, BRD, ghi chú, email) hoặc codebase cũ — các nguồn này hiếm khi đồng ý với nhau — phải truy vết được, có người duyệt ở đúng chỗ, và có biên bản khi bàn giao. Nó quản ba thứ: *yêu cầu đến từ đâu*, *done nghĩa là gì*, và *gate nào đã qua* — rồi để agent tự làm phần còn lại.
 
 | Việc | ae-kit | Bộ khác làm tốt hơn |
 |------|--------|---------------------|
-| Transcript khách / codebase cũ → requirement có nguồn, câu hỏi theo vòng, 5 gate, sprint contract, panel evaluator, ratchet | **ae-kit** | — |
+| Transcript / tài liệu / codebase cũ → claim đối chiếu chéo → requirement có nguồn, câu hỏi theo vòng, 6 gate, sprint contract, panel evaluator, ratchet | **ae-kit** | — |
 | Cách viết code bên trong một task (playbook bug/perf/refactor, design đa model, PR babysit, shipping) | playbook tối thiểu | [pstack](https://github.com/michael-denyer/pstack-claude) (Lauren Tan, port M. Denyer) |
 | Skill nhỏ, composable, người tự xâu chuỗi (grill, TDD, code review 2 trục) | mượn ý tưởng (xem NOTICE.md) | [Skills for Real Engineers](https://github.com/mattpocock/skills) (Matt Pocock) |
 
@@ -16,8 +16,10 @@ Cài cả ba không xung đột: ae-kit lo intake → spec → gate; bên trong 
 
 ```
 Transcript khách (T<n>)   ┐
-Codebase cũ (C<n>)        ┴→ /ae-kit:intake    → spec/discovery-T<n>.md | discovery-C<n>.md  (câu hỏi, không suy diễn)
-                           → /ae-kit:specify   → spec/requirements.md  (EARS, [src:] tag, non-goals)
+Tài liệu khách (F<n>)     ┼→ /ae-kit:intake    → spec/discovery-{T,F,C}<n>.md  (bằng chứng, câu hỏi; không suy diễn)
+Codebase cũ (C<n>)        ┘    + intake/sources.yaml (origin · date · authority · trust — scripts/sources.py)
+                           → /ae-kit:reconcile → spec/claims.md  (≥2 nguồn: corroborated / single / CONFLICT → người quyết theo đề xuất precedence)
+                           → /ae-kit:specify   → spec/requirements.md  (EARS, [src: T§; F§; C O] tag, non-goals)
                            → /ae-kit:lint-spec → spec/lint-*.md + gates.py compute G1
                                                                       ══ G1 Spec ══  /ae-kit:approve G1  (người)
                            → /ae-kit:prototype → spec/prototype/P<v>/ + screens.md (S<n> ↔ R; click-through; artifact spec, KHÔNG phải code)
@@ -53,7 +55,7 @@ Lý do tách: `CLAUDE.md` nạp mọi turn, nên mỗi dòng cạnh tranh sự c
 
 | Gate | Loại | Ô máy (do skill ghi qua `gates.py compute`) | Qua khi |
 |------|------|----------------------------------------------|---------|
-| G1 Spec | người | lint sạch ERROR · không R `proposed` · mọi Q có nhãn send/assume/defer · mọi O (brownfield) có nhãn decided/debt/ignore | `/ae-kit:approve G1` |
+| G1 Spec | người | mọi nguồn T/F/C đã đăng ký metadata (`sources_registered`) · ≥2 nguồn → `claims.md` phủ mọi nguồn, không conflict chưa giải quyết, mọi statement goal/constraint thuộc một claim (`claims_reconciled`) · lint sạch ERROR · không R `proposed` · mọi Q có nhãn send/assume/defer · mọi O (brownfield) có nhãn decided/debt/ignore | `/ae-kit:approve G1`; nguồn mới intake sau khi passed → `compute G1` đưa về pending (drift guard) |
 | GP Prototype | **khách** (consultant ghi nhận) | mọi R accepted có màn hình S<n> hoặc khai "R không có UI" · mọi S có ≥ 1 R (chặn scope creep) · luồng task đầu ≥ 2 S click được · file màn hình tồn tại · `approval-P<v>.md` trỏ tới transcript buổi duyệt T<n> đã intake + "Xác nhận mô hình: yes" · Q phát sinh ở demo có nhãn | `/ae-kit:approve GP "<tên khách>"`; drift guard: requirements đổi sau khi duyệt → về pending, approval cũ bị đánh dấu stale, cần approval mới. Dự án không có UI: `status: n/a` (init hỏi) |
 | G2 Plan | người | mọi R accepted có task · mọi task có ↔/Done:/Files: · task đầu là vertical slice | `/ae-kit:approve G2` |
 | G3 Contract | agent–agent | reviewer `agreed` · mọi tiêu chí quan sát được · rounds ≤ 3 | tự passed trong `/ae-kit:contract` |
@@ -82,6 +84,23 @@ Yêu cầu: Python 3 (bất kỳ tên `python3`, `python` hay `py -3`; không c�
 
 **Windows:** mở `claude` ngay trong thư mục dự án (nơi sẽ có `spec/`); `gates.py` tự tìm `spec/gates.yaml` theo `CLAUDE_PROJECT_DIR` → thư mục hiện tại → các thư mục cha. Đừng mở file `.sh` bằng Notepad (đổi LF thành CRLF). Nếu Git bật `core.autocrlf=true`, thêm `.gitattributes` với `*.sh text eol=lf` và `scripts/py text eol=lf`.
 
+## Nhiều nguồn đầu vào: transcript, tài liệu, codebase (v0.5)
+
+Yêu cầu hiếm khi chỉ đến từ một transcript: khách gửi SRS họ tự viết, ghi chú họp, email, spec của hệ thống cũ. ae-kit coi **mọi nguồn là bằng chứng, không phải sự thật** — một câu trong SRS là bằng chứng rằng ai đó đã viết nó vào ngày đó, chưa phải điều khách muốn hôm nay.
+
+| Nguồn | File | Discovery | Tag nguồn trong R |
+|-------|------|-----------|-------------------|
+| `T<n>` transcript | `intake/T<n>-transcript.md` | `discovery-T<n>.md` (S statement, Q) | `[src: T1 §12]` |
+| `F<n>` tài liệu khách gửi (SRS / BRD / RFP / ghi chú / email / spec cũ) | `intake/F<n>-<slug>.*` (+ `.extracted.md` nếu docx/pdf) | `discovery-F<n>.md` (cấu trúc tài liệu, mục trống/TBD → Q, S, Q) | `[src: F1 §3.2]` |
+| `C<n>` codebase | — | `discovery-C<n>.md` (O quan sát, nhãn `?`) | `[src: C1 O4]` |
+
+Ba cơ chế giữ cho nhiều nguồn không thành "ai nói sau cùng thì đúng":
+1. **Manifest `intake/sources.yaml`** (chỉ `scripts/sources.py` ghi): mỗi nguồn có `origin`, `date`, `author`, `authority` (decision-maker / stakeholder / end-user / unknown), `trust`. G1 đỏ khi nguồn đã intake mà thiếu metadata. `sources.py precedence` in thứ tự ưu tiên **đề xuất** khi mâu thuẫn: mới hơn > authority cao hơn > transcript > tài liệu > codebase > trust (ghi đè bằng `precedence: [T2, T1, F1]`).
+2. **`/ae-kit:reconcile` → `spec/claims.md`** (bắt buộc khi ≥2 nguồn): mỗi claim một câu trung lập, cột Nguồn ghi `T1 S3 (§14); F1 S7 (§3.2)`, trạng thái `corroborated` / `single` / `conflict`. Conflict được hỏi theo vòng frontier với đề xuất theo precedence; **chỉ người** điền cột Giải quyết. Specify đi từ claim xuống R; phía thua của conflict thành Non-goals có ghi chú. Nguồn mới đến sau → intake, chạy lại reconcile; G1 (và GP) tự về pending.
+3. **Linter**: R dựa trên claim conflict chưa giải quyết = ERROR; R chỉ có nguồn tài liệu `trust ≠ high` chưa được khách xác nhận bằng lời = WARN (ERROR nếu đã accepted).
+
+Agent không suy diễn ở bước này: ghi chú rời rạc được trích nguyên văn và mọi chỗ mơ hồ thành Q; câu "shall" trong SRS vẫn là statement, không tự thành R. Mâu thuẫn giữa SRS và lời khách thường là chỗ khách chưa nghĩ kỹ — đó là câu hỏi đáng giá nhất để hỏi họ.
+
 ## UI/UX và prototype (GP)
 
 Prototype trong ae-kit là **artifact spec để khách phản ứng**, không phải mã sản phẩm: nằm trong `spec/prototype/P<v>/` (HTML tĩnh, export từ Claude Design, hoặc Figma + screenshot), mỗi màn hình `S<n>` ↔ R, `next-task` bị cấm import từ đó (tái dùng layout phải là một `D<n>` tường minh trong `design.md`). Buổi demo cho khách được ghi thành transcript `T<n>` và đi qua `/ae-kit:intake` như mọi transcript khác, nên phản ứng của khách có `[src: T<n> §m]` và yêu cầu "xin thêm" tại demo đi qua Q/R chứ không đi thẳng vào prototype. Q trong discovery có thêm nhãn `prototype`: câu "nên trông/hoạt động thế nào" được trả lời bằng màn hình thay vì bằng email. `design.md` có mục 4b UX (luồng, trạng thái bắt buộc rỗng/lỗi/đang tải/không có quyền, ràng buộc i18n/a11y) và contract của sprint có UI phải có tiêu chí "khớp S<n>" ở seam e2e với screenshot.
@@ -92,8 +111,10 @@ Prototype trong ae-kit là **artifact spec để khách phản ứng**, không p
 cd my-startup-project && git init
 claude
 > /ae-kit:init my-project "TypeScript, Next.js, Prisma/SQLite" "pnpm typecheck --silent" "Đặt lịch tư vấn cho consultant độc lập"
-> (đặt transcript đã che PII vào intake/T1-transcript.md)
-> /ae-kit:intake T1          ← điền cột Nhãn cho Q (send/assume/defer) sau khi hỏi khách
+> (đặt transcript đã che PII vào intake/T1-transcript.md; SRS khách gửi vào intake/F1-srs-v0.3.docx)
+> /ae-kit:intake T1          ← đăng ký nguồn (origin/date/authority/trust); điền cột Nhãn cho Q (send/assume/defer) sau khi hỏi khách
+> /ae-kit:intake F1          ← mục trống/TBD và câu "shall" không kiểm chứng được → Q; không tự thành R
+> /ae-kit:reconcile          ← ≥2 nguồn: claims.md; conflict T1 ⟂ F1 hỏi theo vòng, người quyết
 > /ae-kit:specify
 > /ae-kit:lint-spec          ← sửa tay, đổi status → accepted, chạy lại tới khi ô xanh
 > /ae-kit:approve G1
@@ -121,7 +142,8 @@ claude
 > /ae-kit:init my-legacy "…" "…"      ← tự nhận diện brownfield
 > /ae-kit:intake C1                   ← quan sát README/manifest/schema/test, KHÔNG suy diễn
 > (mở spec/discovery-C1.md: đổi ? → decided | debt | ignore cho từng O; trả lời Q)
-> /ae-kit:intake T1                   ← transcript với chủ dự án nếu có
+> /ae-kit:intake T1                   ← transcript với chủ dự án nếu có (hoặc F1: tài liệu thiết kế của hệ thống cũ)
+> /ae-kit:reconcile                   ← C1 ⟂ T1: code làm X, chủ dự án nói Y → conflict, người quyết
 > /ae-kit:specify                     ← O debt → R phase 0; O ? → câu hỏi, không thành R
 > /ae-kit:ratchet                     ← O decided loại rule → luật với [C1 O<n>]
 > /ae-kit:replan                      ← O decided loại tech → docs/product/tech.md
@@ -134,13 +156,14 @@ Nhãn `observed` ≠ `decided`: code cũ chứa cả quyết định lẫn tai n
 
 | Loại | Tên | Vai trò |
 |------|-----|---------|
-| skill | init, intake, specify, lint-spec, approve, prototype, design, plan, publish, contract, next-task, evaluate, ratchet, replan, status, principles | Các bước quy trình (gọi bằng `/ae-kit:<tên>`) |
+| skill | init, intake, reconcile, specify, lint-spec, approve, prototype, design, plan, publish, contract, next-task, evaluate, ratchet, replan, status, principles | Các bước quy trình (gọi bằng `/ae-kit:<tên>`) |
 | skill | principle-laziness-protocol, -model-the-domain, -boundary-discipline, -prove-it-works, -fix-root-causes, -attack-the-premise, -test-behavior-not-implementation, -sequence-verifiable-units, -guard-the-context-window, -encode-lessons-in-structure | Tầng 3 constitution; agent nạp theo trigger (bảng trong `/ae-kit:principles`) |
 | skill | spec-templates | Template artifact + `references/grilling.md` (vòng hỏi) (không gọi trực tiếp) |
 | playbook | `skills/next-task/playbooks/{feature,bugfix,refactor}.md`, `references/tdd.md` | Cách làm một task theo `Loại:`; test tại seam đã chốt |
 | script | `scripts/gates.py` | Logic gate tất định: `show / short / get / set / incr / compute G1\|GP\|G2\|G4\|G5 / panel / approve / pass / next / new-sprint` |
+| script | `scripts/sources.py` | Manifest nguồn `intake/sources.yaml`: `init / add / set / list / check / precedence` (metadata nguồn T/F/C; thứ tự ưu tiên đề xuất khi mâu thuẫn) |
 | script | `scripts/tracker.py` | Chiếu tasks.md lên GitHub Issues qua `gh`: `status / plan / push / sync / link` (idempotent qua `Issue: #n`) |
-| agent | requirement-linter | Chỉ trả về câu hỏi (ERROR/WARN); không điền chỗ trống |
+| agent | requirement-linter | Chỉ trả về câu hỏi (ERROR/WARN); không điền chỗ trống; kiểm claim conflict và nguồn tài liệu chưa xác nhận |
 | agent | planner | Vertical slice, depth-first; mỗi task ↔ R, Done:, Files: |
 | agent | contract-reviewer | Phản biện "done" trước khi code; trả JSON agreed/unobservable |
 | agent | evaluator | QA hoài nghi, độc lập; bảng PASS/FAIL cho mọi tiêu chí; `Verdict:` dòng đầu; chạy nhiều bản khác model khi panel bật |
@@ -151,8 +174,9 @@ Nhãn `observed` ≠ `decided`: code cũ chứa cả quyết định lẫn tai n
 ## Nguyên tắc thiết kế (để bạn sửa plugin đúng tinh thần)
 
 1. **Artifact là file trong repo**, không phải nội dung chat. Session mới phải dựng lại được trạng thái chỉ từ `spec/` + `docs/product/`.
-2. **Traceability**: mọi requirement có `[src: T§]`, `[src: A]` hoặc `[src: C O]`; mọi luật có `[nguồn]`. Không nguồn → không viết.
-3. **LLM đặt câu hỏi, người trả lời.** Intake (T và C) và lint chỉ sinh câu hỏi, hỏi theo vòng frontier, mỗi câu kèm giả định mặc định A<n> (`yes` = chấp nhận); sự thật tra cứu được thì agent tự tra, chỉ quyết định mới hỏi người. "Làm mịn" spec là làm với khách, không với model.
+2. **Traceability**: mọi requirement có `[src: T§]`, `[src: F§]`, `[src: C O]` hoặc `[src: A]` (nhiều nguồn cách nhau `;`); mọi luật có `[nguồn]`; mọi nguồn có metadata (ai, ngày, thẩm quyền). Không nguồn → không viết.
+3. **LLM đặt câu hỏi, người trả lời.** Intake (T, F, C), reconcile và lint chỉ sinh câu hỏi, hỏi theo vòng frontier, mỗi câu kèm giả định mặc định A<n> (`yes` = chấp nhận); sự thật tra cứu được thì agent tự tra, chỉ quyết định mới hỏi người. "Làm mịn" spec là làm với khách, không với model.
+3b. **Nguồn là bằng chứng, không phải sự thật; mâu thuẫn giữa nguồn là câu hỏi, không phải thứ tự ưu tiên.** Reconcile chỉ *đề xuất* theo precedence (mới hơn, thẩm quyền cao hơn); người điền Giải quyết. Ngày tháng không phải thẩm quyền.
 4. **Tách generator và evaluator.** Agent tự chấm sẽ tự khen. Evaluator không được xem lời giải thích của generator; nhiều evaluator khác model không được xem nhau, và máy (không phải generator) tổng hợp verdict.
 5. **Khách phản ứng với thứ thật, không với chữ** (GP). Prototype là spec, không phải code; mọi màn hình trả lời một R; phản ứng của khách là transcript.
 5b. **Chốt "done" trước khi code** (sprint contract, G3). Ranh giới ≥/> và **seam** test chốt ở đây, không ở lúc debug.
@@ -168,9 +192,10 @@ Nhãn `observed` ≠ `decided`: code cũ chứa cả quyết định lẫn tai n
 - `.ae-kit/block-patterns.txt` — regex lệnh Bash cần chặn thêm, một dòng một pattern.
 - `spec/gates.yaml` — đổi `max_rounds` / `max_retries` / `panel.models` / `panel.min_agree` bằng `gates.py set`; đặt `AE_BASE_BRANCH` nếu nhánh gốc không phải `main`.
 - `.ae-kit/principles.md` — trigger principle riêng của project (chỉ qua `/ae-kit:ratchet` mức 4, mỗi dòng có `[nguồn]`).
+- `intake/sources.yaml` — chỉ qua `scripts/sources.py`; `precedence: [T2, T1, F1]` để ghi đè thứ tự ưu tiên đề xuất.
 - `.ae-kit/tracker` — `none` (mặc định) hoặc `github` (+ `labels: …`, `repo: owner/name`); cần `gh auth login`.
 - `CLAUDE.md` — chỉ qua `/ae-kit:ratchet`. `docs/product/*` — chỉ qua `/ae-kit:replan`.
 - Muốn evaluator dùng Playwright: thêm MCP Playwright vào project (`.mcp.json`) và cho phép tool `mcp__playwright__.*` trong `agents/evaluator.md` → `tools:`.
 
 ## Dữ liệu khách hàng
-Transcript phải có sự đồng ý của khách, đã che PII, và không được sửa sau khi commit. Cân nhắc dùng API/plan có cam kết không dùng dữ liệu để huấn luyện cho các project có dữ liệu nhạy cảm.
+Transcript và tài liệu khách gửi phải có sự đồng ý của khách, đã che PII, và không được sửa sau khi commit (phiên bản mới = ID mới). Cân nhắc dùng API/plan có cam kết không dùng dữ liệu để huấn luyện cho các project có dữ liệu nhạy cảm.

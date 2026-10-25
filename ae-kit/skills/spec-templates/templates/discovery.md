@@ -1,6 +1,7 @@
 # Discovery — {{SOURCE_ID}}
 
-Nguồn: `intake/{{SOURCE_ID}}-transcript.md` (ngày {{DATE}}, người tham gia: {{PARTICIPANTS}})
+Nguồn: `intake/{{SOURCE_ID}}-transcript.md` (ngày {{DATE}}, người tham gia: {{PARTICIPANTS}}) · origin: {{ORIGIN}} · authority: {{AUTHORITY}}
+<!-- Metadata khớp intake/sources.yaml (scripts/sources.py add {{SOURCE_ID}} ...). Mâu thuẫn với nguồn KHÁC (F/C) → spec/claims.md (reconcile), không ghi ở đây. -->
 
 ## 1. Statements (khách nói gì — trích dẫn, không diễn giải)
 <!-- Mỗi statement: mã S<n>, đoạn trích ngắn, vị trí trong transcript -->

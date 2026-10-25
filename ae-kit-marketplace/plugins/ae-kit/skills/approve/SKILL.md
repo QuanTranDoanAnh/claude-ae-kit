@@ -13,7 +13,7 @@ Bạn KHÔNG tự tick ô nào trong `checks`. `gates.py approve` từ chối n�
 
 ## Các bước
 1. Nhắc người dùng những gì họ **nên đã đọc** trước khi duyệt (một dòng mỗi gate):
-   - G1: `spec/requirements.md` (R accepted, Non-goals), `spec/lint-*.md` mới nhất, cột Nhãn của Q trong `spec/discovery-*.md` (và O nếu brownfield).
+   - G1: `spec/requirements.md` (R accepted, Non-goals), `spec/lint-*.md` mới nhất, cột Nhãn của Q trong `spec/discovery-*.md` (và O nếu brownfield); nhiều nguồn: `spec/claims.md` (cột Giải quyết của mọi conflict, danh sách single) và `intake/sources.yaml` (ai/ngày/authority đứng sau từng nguồn). Chạy `$G compute G1` trước nếu vừa intake nguồn mới.
    - GP: `spec/prototype/screens.md` (S ↔ R, "R không có UI"), `approval-P<v>.md` (3 dòng đầu, bảng S ↔ kết luận ↔ §), `spec/discovery-T<n>.md` của buổi demo. `who` ở GP là **tên khách/người đại diện đã duyệt** (bắt buộc), ghi thêm consultant trong progress.md. Chạy `$G compute GP` trước (drift guard: requirements đổi sau khi khách duyệt → ô đỏ, phải demo lại hoặc khách xác nhận lại bằng approval mới).
    - G2: `spec/tasks.md` — thứ tự, done-condition, Files, 3 task rủi ro planner đã đánh dấu.
    - G5: `spec/sprint-<N>.contract.md` bảng Chốt, `spec/eval-sprint-<N>-r<k>.md` mới nhất, và diff ở mức cao (không đọc từng dòng).

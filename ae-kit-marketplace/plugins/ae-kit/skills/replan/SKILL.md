@@ -11,9 +11,9 @@ Chạy sau khi G5 của một sprint passed, hoặc khi chủ dự án muốn đ
 ## Ranh giới cứng
 - Chỉ sửa: `docs/product/mission.md`, `docs/product/tech.md`, `docs/product/roadmap.md`.
 - KHÔNG sửa `CLAUDE.md`. Cần luật mới → ghi vào `spec/progress.md` mục "Đề xuất ratchet" theo định dạng `- <luật>. — <lý do> — [<nguồn>]` và bảo người chạy `/ae-kit:ratchet`.
-- KHÔNG sửa `spec/requirements.md`. Feature mới → cần intake/specify mới: ghi quyết định của chủ dự án thành transcript ngắn `intake/T<n>-transcript.md` (với `[src: owner <ngày>]`) rồi `/ae-kit:intake T<n>`. Replan chỉ ghi *ý định* vào roadmap/backlog, không ghi requirement.
+- KHÔNG sửa `spec/requirements.md`. Feature mới → cần intake/specify mới: ghi quyết định của chủ dự án thành transcript ngắn `intake/T<n>-transcript.md` (với `[src: owner <ngày>]`) rồi `/ae-kit:intake T<n>` (tài liệu khách gửi mới → `intake/F<n>-<slug>.*`, `/ae-kit:intake F<n>`; ≥2 nguồn → `/ae-kit:reconcile`). Replan chỉ ghi *ý định* vào roadmap/backlog, không ghi requirement.
 - KHÔNG sửa `spec/gates.yaml`.
-- Mọi dòng thêm/sửa trong docs/product phải có nguồn `[src: T<n> §<m>]`, `[src: C<n> O<m>]` hoặc `[src: owner <ngày>]`.
+- Mọi dòng thêm/sửa trong docs/product phải có nguồn `[src: T<n> §<m>]`, `[src: F<n> §<m>]`, `[src: C<n> O<m>]` hoặc `[src: owner <ngày>]`.
 
 ## Các bước
 1. Đọc `spec/gates.yaml` (`current_sprint`), `spec/tasks.md`, `spec/requirements.md`, 3 file docs/product, `spec/progress.md`, eval mới nhất `spec/eval-sprint-*.md`, và `spec/discovery-C*.md` nếu có.

@@ -1,6 +1,6 @@
 ---
 name: spec-templates
-description: Bộ template artifact của quy trình ae-kit (CLAUDE.md constitution tầng luật, docs/product tầng context, gates.yaml, discovery T/C, requirements EARS, design, tasks, sprint-contract, progress, eval-report). Các skill khác tham chiếu tới đây; không gọi trực tiếp.
+description: Bộ template artifact của quy trình ae-kit (CLAUDE.md constitution tầng luật, docs/product tầng context, gates.yaml, discovery T/F/C, claims đối chiếu chéo, requirements EARS, design, tasks, sprint-contract, progress, eval-report). Các skill khác tham chiếu tới đây; không gọi trực tiếp.
 user-invocable: false
 ---
 
@@ -12,7 +12,10 @@ Các template nằm trong `${CLAUDE_SKILL_DIR}/templates/`:
 | mission.md, tech.md, roadmap.md | init / replan | `docs/product/*.md` | product context (replan sửa) |
 | gates.yaml | init | `spec/gates.yaml` | trạng thái gate (chỉ `scripts/gates.py` ghi) |
 | discovery.md | intake T<n> | `spec/discovery-T<n>.md` | spec |
+| discovery-document.md | intake F<n> (SRS / BRD / RFP / ghi chú / email) | `spec/discovery-F<n>.md` | spec |
 | discovery-codebase.md | intake C<n> (brownfield) | `spec/discovery-C<n>.md` | spec |
+| claims.md | reconcile (≥2 nguồn) | `spec/claims.md` | spec (đối chiếu chéo; G1 đọc) |
+| (không có template) | intake / sources.py | `intake/sources.yaml` | manifest nguồn — chỉ `scripts/sources.py` ghi |
 | requirements.md | specify | `spec/requirements.md` | spec |
 | screens.md | prototype | `spec/prototype/screens.md` (+ `P<v>/` màn hình, `demo-P<v>.md`) | spec (artifact khách duyệt, không phải mã) |
 | approval.md | prototype approve | `spec/prototype/approval-P<v>.md` | spec (bằng chứng GP) |
@@ -23,11 +26,12 @@ Các template nằm trong `${CLAUDE_SKILL_DIR}/templates/`:
 | eval-report.md | evaluate | `spec/eval-sprint-<N>-r<k>.md` (panel: `-p<i>` mỗi model, bản tổng hợp do `gates.py panel` ghi) | spec |
 | principles.md | init / ratchet mức 4 | `.ae-kit/principles.md` | principle (tầng 3, trigger riêng) |
 
-Tham chiếu dùng chung: `${CLAUDE_SKILL_DIR}/references/grilling.md` — cách hỏi theo vòng frontier (intake, lint-spec, contract).
+Tham chiếu dùng chung: `${CLAUDE_SKILL_DIR}/references/grilling.md` — cách hỏi theo vòng frontier (intake, reconcile, lint-spec, contract).
 
 Quy ước chung của mọi artifact:
 - Placeholder dạng `{{NAME}}` phải được thay hết; không để sót.
-- Mọi requirement mang tag nguồn gốc `[src: T<n> §<m>]`, `[src: A<n>]` hoặc `[src: C<n> O<m>]`.
+- Mọi requirement mang tag nguồn gốc `[src: T<n> §<m>]` (lời khách), `[src: F<n> §<m>]` (tài liệu), `[src: C<n> O<m>]` (codebase) hoặc `[src: A<n>]` (giả định); nhiều nguồn cách nhau `;`. Nguồn đang `conflict` chưa giải quyết trong `spec/claims.md` → không được dùng.
+- Mọi nguồn đã intake có mục trong `intake/sources.yaml` (origin/date/authority/trust) qua `bash "${CLAUDE_PLUGIN_ROOT}/scripts/py" "${CLAUDE_PLUGIN_ROOT}/scripts/sources.py" ...`, không sửa tay.
 - Mọi dòng luật trong CLAUDE.md kết thúc bằng `[<nguồn>]`: `[harness]`, `[ratchet #n]`, `[N<n>]`, `[I<n>]`, `[C<n> O<m>]`.
 - Artifact là file trong repo, không phải nội dung chat. Luôn ghi file rồi mới tóm tắt.
 - Trạng thái gate chỉ đổi qua `bash "${CLAUDE_PLUGIN_ROOT}/scripts/py" "${CLAUDE_PLUGIN_ROOT}/scripts/gates.py" ...`, không sửa `gates.yaml` tay.

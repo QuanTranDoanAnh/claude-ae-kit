@@ -49,6 +49,8 @@ Agent chỉ được sửa **cột Nhãn và cột Giả định mặc định**
 ## 6. Hai bối cảnh
 - **intake T**: người trả lời là consultant đang cầm transcript; `send` nghĩa là sẽ hỏi khách. Transcript câu trả lời của khách → `intake/T<n+1>-transcript.md` → `/ae-kit:intake T<n+1>` tự khớp Q.
 - **intake C**: người trả lời là chủ dự án/dev lâu năm; hầu hết Q đi kèm một O; `yes` xác nhận cả đề xuất phân loại O (decided/debt/ignore) ghi ở cột Đề xuất.
+- **intake F**: người trả lời là consultant đang cầm tài liệu khách gửi; Q thường là "mục này trống/TBD, khách có cần không?" và "câu này trong SRS còn hiệu lực không?". `send` nghĩa là sẽ hỏi khách; câu trả lời về bằng transcript (T<n+1>) hoặc tài liệu phiên bản mới (F<n+1>, nhắc `superseded`).
+- **reconcile**: mỗi mục là một claim `conflict` (hai phía trích nguyên văn + nguồn/ngày/authority) hoặc `single` cần xác nhận; `➡️ Đề xuất` lấy từ `sources.py precedence` (nguồn mới hơn > authority cao hơn > transcript > tài liệu > codebase > trust) — chỉ là đề xuất. `yes` → cột Giải quyết của `spec/claims.md` ghi "<nguồn> thắng (người quyết <ngày>)"; `send` → Q trong discovery mới nhất nhãn `send` và Giải quyết = `send Q<n>`; `defer` → `defer`. Người có thể trả lời "cả hai đúng, khác ngữ cảnh" → agent tách claim làm hai (không gộp), hỏi lại ở vòng sau.
 - **lint-spec**: Q đến từ linter (ERROR/WARN). Vòng chia hai nhóm: "cần hỏi khách" (chỉ nhận `send`/`defer`) và "người tự quyết được" (nhận `yes`/trả lời). Trả lời của người → ghi vào `spec/lint-<ngày>.md` cột "Quyết định"; người tự sửa `requirements.md` (lint-spec không sửa).
 
 Ý tưởng vòng hỏi theo frontier và "yes chấp nhận đề xuất" phỏng theo skill `grilling` của mattpocock/skills (MIT); xem NOTICE.md.

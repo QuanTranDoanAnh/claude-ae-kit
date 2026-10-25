@@ -7,7 +7,7 @@
     {
       "name": "ae-kit",
       "source": "./plugins/ae-kit",
-      "description": "Agentic Engineering kit: spec-anchored workflow with 5 quality gates, independent evaluator, brownfield intake and ratchet."
+      "description": "Agentic Engineering kit: spec-anchored workflow with 6 quality gates, multi-source intake (transcripts, SRS/notes, brownfield codebase) reconciled into traceable requirements, customer-approved prototype gate, independent multi-model evaluator and ratchet."
     }
   ]
 }

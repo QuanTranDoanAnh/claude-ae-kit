@@ -8,7 +8,7 @@
 
 ## Nguồn sự thật
 - `spec/requirements.md` + `spec/design.md` là nguồn sự thật. Code mâu thuẫn spec → sửa spec trước, nêu lý do trong PR. — spec-anchored — [harness]
-- Mọi requirement có tag `[src: T<n> §<m>]`, `[src: A<n>]` hoặc `[src: C<n> O<m>]`. Không nguồn → không viết. — traceability — [harness]
+- Mọi requirement có tag `[src: T<n> §<m>]` (lời khách), `[src: F<n> §<m>]` (tài liệu), `[src: C<n> O<m>]` (codebase) hoặc `[src: A<n>]` (giả định). Không nguồn → không viết; nguồn mâu thuẫn chưa giải quyết (spec/claims.md) → không viết. — traceability — [harness]
 - `spec/gates.yaml` là trạng thái quy trình; `spec/progress.md` là handoff. Đọc đầu session, cập nhật cuối session. — context decay — [harness]
 
 ## Vòng lặp làm việc

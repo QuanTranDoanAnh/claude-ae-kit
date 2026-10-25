@@ -1,6 +1,7 @@
 # spec/gates.yaml — nguồn sự thật về trạng thái quality gate. Sửa qua scripts/gates.py, không sửa tay.
 # Ô "checks" do skill ghi SAU KHI kiểm tra thật. approved_by chỉ do /ae-kit:approve ghi, và chỉ khi mọi ô true.
 # status: pending | blocked | passed | n/a.  G1/GP/G2/G5 người duyệt (GP: KHÁCH duyệt prototype, consultant ghi nhận); G3/G4 máy/agent.
+# G1 (v0.5): sources_registered = mọi nguồn T/F/C đã intake có metadata trong intake/sources.yaml; claims_reconciled = ≥2 nguồn → spec/claims.md phủ mọi nguồn, không conflict chưa giải quyết (1 nguồn → true).
 # GP_prototype: dự án không có UI → status: n/a (init hỏi). Đổi: scripts/gates.py set GP_prototype.status pending|n/a
 
 project: "{{PROJECT_NAME}}"
@@ -8,6 +9,8 @@ current_sprint: 1
 G1_spec:
   status: pending
   checks:
+    sources_registered: false
+    claims_reconciled: false
     lint_clean: false
     all_R_accepted: false
     open_q_classified: false

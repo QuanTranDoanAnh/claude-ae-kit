@@ -21,6 +21,9 @@ Lệnh:
   next                         in đúng một lệnh /ae-kit:... nên chạy tiếp
   new-sprint                   current_sprint += 1, reset G3/G4/G5
 Gate GP (Prototype, khách duyệt) nằm giữa G1 và G2; dự án không có UI: `set GP_prototype.status n/a`.
+G1 (v0.5) có thêm hai ô máy: sources_registered (mọi nguồn T/F/C đã intake có metadata trong intake/sources.yaml —
+xem scripts/sources.py) và claims_reconciled (≥2 nguồn → spec/claims.md phủ mọi nguồn, không conflict chưa giải quyết,
+mọi statement goal/constraint/out-of-scope thuộc một claim; 1 nguồn → true).
 Exit code: 0 ok · 1 lỗi tham số/file · 2 gate không đạt (để skill dừng).
 """
 import os, re, sys, glob, subprocess, datetime, json
@@ -80,11 +83,11 @@ def _split_list(inner):
     if cur.strip(): out.append(cur)
     return out
 
-def load():
-    if not os.path.exists(GATES):
-        sys.stderr.write(f"gates.yaml không có ở {GATES} — chạy /ae-kit:init trong thư mục dự án (hoặc copy template).\n"); sys.exit(1)
+def load_yaml(path):
+    """Đọc YAML tối giản (map lồng nhau + scalar + list inline) → (header_comment_lines, dict).
+    Dùng chung cho spec/gates.yaml và intake/sources.yaml (scripts/sources.py import hàm này)."""
     header, data, stack = [], {}, [(-1, None)]
-    for raw in open(GATES, encoding="utf-8"):
+    for raw in open(path, encoding="utf-8"):
         line = raw.rstrip("\n")
         if not line.strip() or line.lstrip().startswith("#"):
             if not data: header.append(line)
@@ -101,6 +104,11 @@ def load():
         else:
             parent[key] = _scalar(val)
     return header, data
+
+def load():
+    if not os.path.exists(GATES):
+        sys.stderr.write(f"gates.yaml không có ở {GATES} — chạy /ae-kit:init trong thư mục dự án (hoặc copy template).\n"); sys.exit(1)
+    return load_yaml(GATES)
 
 def _dump(d, indent=0):
     out = []
@@ -121,10 +129,13 @@ def _fmt(v):
     s = str(v)
     return f'"{s}"' if re.search(r"[:#\[\]{},]|^\s|\s$", s) or s in ("true","false","null") else s
 
-def save(header, data):
+def save_yaml(path, header, data):
     lines = [h for h in header if h.strip()]  # giữ comment đầu file
     txt = "\n".join(lines + ([""] if lines else []) + _dump(data)) + "\n"
-    open(GATES, "w", encoding="utf-8").write(txt)
+    open(path, "w", encoding="utf-8").write(txt)
+
+def save(header, data):
+    save_yaml(GATES, header, data)
 
 def getp(d, path):
     for p in path.split("."):
@@ -162,11 +173,100 @@ def req_ids(text, accepted_only=False):
             ids.add(m.group(1))
     return ids
 
+# ---------- nguồn đầu vào (v0.5: T transcript · F file tài liệu · C codebase) ----------
+SOURCES = os.path.join(ROOT, "intake", "sources.yaml")
+SRC_KINDS = "TFC"
+REQUIRED_META = ("type", "origin", "date", "authority")
+
+def discovery_ids():
+    """ID nguồn có spec/discovery-<ID>.md: ['T1', 'F1', 'C1'] — sắp theo chữ rồi số."""
+    ids = []
+    for f in glob.glob(os.path.join(ROOT, "spec", "discovery-*.md")):
+        m = re.fullmatch(rf"discovery-([{SRC_KINDS}]\d+)\.md", os.path.basename(f))
+        if m: ids.append(m.group(1))
+    return sorted(ids, key=lambda s: (s[0], int(s[1:])))
+
+def load_sources():
+    """intake/sources.yaml → dict {ID: {type, path, origin, date, author, authority, trust}} (rỗng nếu chưa có)."""
+    if not os.path.exists(SOURCES): return None
+    _, d = load_yaml(SOURCES)
+    return {k: v for k, v in d.items() if re.fullmatch(rf"[{SRC_KINDS}]\d+", k) and isinstance(v, dict)}
+
+def sources_missing_meta(srcs, ids):
+    """[(ID, [trường thiếu/`?`])] cho mỗi ID đã intake mà manifest chưa đủ metadata."""
+    out = []
+    for i in ids:
+        e = (srcs or {}).get(i)
+        if e is None: out.append((i, ["chưa có trong sources.yaml"])); continue
+        miss = [k for k in REQUIRED_META if e.get(k) in (None, "", "?")]
+        if miss: out.append((i, miss))
+    return out
+
+def statement_ids():
+    """{ 'T1': {'S1': 'goal', ...}, 'F1': {...}, 'C1': {'O1': 'tech', ...} } — ô cuối của bảng là Loại/Nhãn."""
+    out = {}
+    for i in discovery_ids():
+        txt = _read(f"spec/discovery-{i}.md")
+        rows = {}
+        for m in re.finditer(r"^\|\s*([SO]\d+)\s*\|(.*)\|\s*$", txt, re.M):
+            cells = [c.strip() for c in m.group(2).split("|")]
+            kind = (cells[2] if len(cells) > 2 else "").lower().split()
+            rows[m.group(1)] = kind[0] if kind else ""
+        out[i] = rows
+    return out
+
+def claims_info():
+    """Đọc spec/claims.md: {'exists', 'covered': [ID], 'rows': [(CL, status, resolution, refs)]}; refs = {('T1','S3'), ...}."""
+    txt = _read("spec/claims.md")
+    info = {"exists": bool(txt), "covered": [], "rows": []}
+    if not txt: return info
+    m = re.search(r"^Nguồn đã đối chiếu:\s*([^\n]*)$", txt, re.M)
+    if m: info["covered"] = re.findall(rf"\b([{SRC_KINDS}]\d+)\b", m.group(1))
+    for m in re.finditer(r"^\|\s*(CL\d+)\s*\|(.*)\|\s*$", txt, re.M):
+        cells = [c.strip() for c in m.group(2).split("|")]
+        if len(cells) < 5: continue
+        src, status, resolution = cells[1], cells[2].lower(), cells[4]
+        refs = {(a, b) for a, b in re.findall(rf"\b([{SRC_KINDS}]\d+)\s+([SO]\d+)\b", src)}
+        info["rows"].append((m.group(1), status, resolution, refs))
+    return info
+
+MAPPED_KINDS = ("goal", "constraint", "out-of-scope")
+
 def compute(data, gate):
     c = data.setdefault(gate, {}).setdefault("checks", {})
     notes = []
     if gate == "G1_spec":
         req = _read("spec/requirements.md")
+        # --- v0.5: manifest nguồn + đối chiếu chéo ---
+        ids = discovery_ids()
+        srcs = load_sources()
+        if srcs is None and ids:
+            c["sources_registered"] = False
+            notes.append("chưa có intake/sources.yaml → `scripts/py scripts/sources.py init` rồi điền origin/date/authority cho từng nguồn")
+        else:
+            miss = sources_missing_meta(srcs, ids)
+            c["sources_registered"] = not miss and bool(ids)
+            for i, ks in miss: notes.append(f"nguồn {i} thiếu metadata: " + ", ".join(ks) + " (intake/sources.yaml)")
+            if not ids: notes.append("chưa có spec/discovery-*.md → /ae-kit:intake")
+        if len(ids) <= 1:
+            c["claims_reconciled"] = bool(ids)
+            if len(ids) == 1: notes.append(f"1 nguồn ({ids[0]}) — không cần /ae-kit:reconcile")
+        else:
+            ci = claims_info()
+            ok = ci["exists"]
+            if not ok: notes.append(f"{len(ids)} nguồn ({', '.join(ids)}) nhưng chưa có spec/claims.md → /ae-kit:reconcile")
+            else:
+                uncovered = [i for i in ids if i not in ci["covered"]]
+                if uncovered: ok = False; notes.append("claims.md chưa đối chiếu nguồn: " + ", ".join(uncovered) + " → chạy lại /ae-kit:reconcile")
+                open_conf = [cl for cl, st, res, _ in ci["rows"] if st == "conflict" and not res]
+                if open_conf: ok = False; notes.append("conflict chưa có Giải quyết: " + ", ".join(open_conf))
+                single = [cl for cl, st, _, _ in ci["rows"] if st == "single"]
+                if single: notes.append(f"{len(single)} claim chỉ có một nguồn (không chặn; xem cột Đề xuất)")
+                mapped = set().union(*[r[3] for r in ci["rows"]]) if ci["rows"] else set()
+                unmapped = [f"{i} {s}" for i, rows in statement_ids().items() for s, k in rows.items()
+                            if k in MAPPED_KINDS and (i, s) not in mapped]
+                if unmapped: ok = False; notes.append("statement goal/constraint/out-of-scope chưa vào claim nào: " + ", ".join(unmapped[:12]) + (" …" if len(unmapped) > 12 else ""))
+            c["claims_reconciled"] = ok
         lint = _latest("spec/lint-*.md")
         lint_txt = open(lint, encoding="utf-8").read() if lint else ""
         c["lint_clean"] = bool(lint) and not re.search(r"^\|[^\n]*\|\s*ERROR\s*\|", lint_txt, re.M)
@@ -455,13 +555,24 @@ def failing(d, gate):
 # ---------- hiển thị ----------
 SYM = {"passed": "[✓]", "blocked": "[✗]", "pending": "[ ]"}
 NEXT = {
-    "G1_spec": lambda d: "/ae-kit:lint-spec" if not d["G1_spec"].get("evidence") else ("/ae-kit:approve G1" if all_true(d, "G1_spec") else "/ae-kit:lint-spec (sửa ô đỏ rồi chạy lại)"),
+    "G1_spec": lambda d: _next_g1(d),
     "GP_prototype": lambda d: "/ae-kit:prototype" if not os.path.exists(os.path.join(ROOT, "spec", "prototype", "screens.md")) else ("/ae-kit:approve GP \"<tên khách>\"" if all_true(d, "GP_prototype") else "/ae-kit:prototype (sửa ô đỏ; demo cho khách; /ae-kit:intake T<n> buổi duyệt)"),
     "G2_plan": lambda d: "/ae-kit:approve G2" if all_true(d, "G2_plan") else "/ae-kit:plan",
     "G3_contract": lambda d: f"/ae-kit:contract {d.get('current_sprint') or 1}",
     "G4_evidence": lambda d: "/ae-kit:next-task (nếu còn task) rồi /ae-kit:evaluate " + str(d.get("current_sprint") or 1),
     "G5_merge": lambda d: "/ae-kit:approve G5",
 }
+
+def _next_g1(d):
+    ids = discovery_ids()
+    if not ids: return "/ae-kit:intake T1 (hoặc F1 tài liệu / C1 codebase)"
+    if load_sources() is None or sources_missing_meta(load_sources(), ids):
+        return "scripts/sources.py init (điền origin/date/authority trong intake/sources.yaml)"
+    if len(ids) > 1 and (not claims_info()["exists"] or [i for i in ids if i not in claims_info()["covered"]]):
+        return "/ae-kit:reconcile"
+    if not os.path.exists(os.path.join(ROOT, "spec", "requirements.md")): return "/ae-kit:specify"
+    if not d["G1_spec"].get("evidence"): return "/ae-kit:lint-spec"
+    return "/ae-kit:approve G1" if all_true(d, "G1_spec") else "/ae-kit:lint-spec (sửa ô đỏ rồi chạy lại)"
 
 def next_cmd(d):
     for g in ORDER:
@@ -508,6 +619,24 @@ def show(d):
     print(f"CLAUDE.md: {len(cl.splitlines())}/40 dòng · {len(nosrc)} dòng luật thiếu [nguồn]" + ("  → /ae-kit:ratchet --audit" if nosrc else ""))
     uno = sum(len(re.findall(r"^\|\s*O\d+\s*\|.*\|\s*\?\s*\|\s*$", open(f, encoding="utf-8").read(), re.M)) for f in glob.glob(os.path.join(ROOT, "spec", "discovery-C*.md")))
     if glob.glob(os.path.join(ROOT, "spec", "discovery-C*.md")): print(f"Brownfield: {uno} O chưa phân loại")
+    ids = discovery_ids()
+    if ids:
+        srcs = load_sources() or {}
+        parts = []
+        for i in ids:
+            e = srcs.get(i, {})
+            meta = ", ".join(str(e[k]) for k in ("type", "origin", "date") if e.get(k) not in (None, "", "?"))
+            parts.append(f"{i}" + (f" ({meta})" if meta else " (chưa đăng ký)"))
+        line = "Nguồn: " + " · ".join(parts)
+        if len(ids) > 1:
+            ci = claims_info()
+            if ci["exists"]:
+                oc = sum(1 for _, st, res, _ in ci["rows"] if st == "conflict" and not res)
+                sg = sum(1 for _, st, _, _ in ci["rows"] if st == "single")
+                line += f"  |  claims: {len(ci['rows'])} ({oc} conflict chưa giải quyết, {sg} single)"
+            else:
+                line += "  |  chưa reconcile"
+        print(line)
     rm = _read("docs/product/roadmap.md")
     rows = re.findall(r"^\|\s*\d+[^|]*\|[^|]*\|[^|]*\|\s*(planned|in-progress|done|dropped)\s*\|", rm, re.M)
     if rows: print(f"Roadmap: {rows.count('done')}/{len(rows)} feature done")
