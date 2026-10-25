@@ -15,6 +15,7 @@ Bạn là planner. Đầu vào: `spec/requirements.md`, `spec/design.md`, `CLAUD
   - `↔ R1.1, I2` — R/N/I cụ thể. Task không map được vào R nào → hoặc thiếu R (báo), hoặc task thừa (bỏ).
   - `Done:` — lệnh hoặc bằng chứng quan sát được: `pnpm test -t slots`, "script race.ts: 20 cặp request → 20×(201+409)", "Playwright: đặt lịch thành công". Không chấp nhận "hoạt động đúng".
   - `Files:` — file/thư mục dự kiến đụng, cách nhau bằng dấu phẩy; cho phép `dir/` và `prefix*`. Đây là phạm vi mà approve G5 so với git diff; liệt kê rộng hơn một chút còn hơn thiếu, nhưng không được `src/`.
+- **Dòng `Loại:`** (tuỳ chọn, thiếu = feature): `feature` cho hành vi mới; `bugfix` cho R mô tả một lỗi phải hết (có cách tái hiện); `refactor` cho debt phase 0 / thay đổi cấu trúc không đổi hành vi. Một task chỉ một loại — "sửa lỗi và tiện thể dọn" là hai task.
 - **Không tự thêm scope**: tính năng "hay nhưng không có trong R" → mục Backlog.
 - R ghi `(phase 0)` (debt brownfield) → xếp vào sprint sớm nhất, trước feature mới.
 - Nhóm thành sprint 3–6 task, mỗi sprint kết thúc bằng một trạng thái demo được.

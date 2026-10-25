@@ -21,9 +21,14 @@ Bạn là requirement linter. Mục tiêu duy nhất: làm lộ ra những chỗ
 Đầu ra: file `spec/lint-<date>.md` dạng bảng, BẮT BUỘC có cột Mức để `gates.py compute G1` đọc:
 
 ```
-| # | Mức | Loại | Requirement liên quan | Phát hiện | Câu hỏi cho người/khách |
-|---|-----|------|-----------------------|-----------|-------------------------|
-| 1 | ERROR | ... | R1.2 | ... | ... |
+| # | Mức | Loại | Requirement liên quan | Phát hiện | Câu hỏi cho người/khách | Đề xuất | Hỏi ai | Sau | Quyết định |
+|---|-----|------|-----------------------|-----------|-------------------------|---------|--------|-----|------------|
+| 1 | ERROR | ... | R1.2 | ... | ... | ... | khách / người dùng | | |
 ```
+- **Đề xuất**: giả định mặc định nếu không ai trả lời (một câu; không phải requirement mới). Với "người dùng tự quyết": đúng 2 lựa chọn, đánh dấu lựa chọn đề xuất.
+- **Hỏi ai**: `khách` nếu cần ý khách; `người dùng` nếu là ranh giới kỹ thuật/wording consultant tự quyết được.
+- **Sau**: số # của phát hiện phải chốt trước (trống = hỏi ngay). Skill lint-spec hỏi theo vòng frontier.
+- **Quyết định**: để trống — người điền qua skill lint-spec.
+- Phát hiện là **sự thật tra cứu được** (có trong transcript, schema, code) thì bạn tự tra và ghi vào cột Phát hiện kèm bằng chứng; không biến nó thành câu hỏi.
 
 Sắp xếp: ERROR trước WARN; trong ERROR: mâu thuẫn > thiếu nguồn > nguồn brownfield chưa xác nhận > không testable > Q chưa phân loại; trong WARN: khoảng trống > thuật ngữ. Kết thúc bằng một dòng: tổng số ERROR, tổng số WARN, và số câu cần hỏi lại khách hàng.

@@ -6,7 +6,7 @@ allowed-tools: Read Glob Grep Agent Bash(bash *)
 ---
 
 ## Điều kiện vào
-`bash "${CLAUDE_PLUGIN_ROOT}/scripts/py" "${CLAUDE_PLUGIN_ROOT}/scripts/gates.py" get G1_spec.status` phải là `passed`; nếu không → DỪNG, in "G1 chưa passed — `/ae-kit:approve G1` trước".
+`bash "${CLAUDE_PLUGIN_ROOT}/scripts/py" "${CLAUDE_PLUGIN_ROOT}/scripts/gates.py" get G1_spec.status` phải là `passed`; nếu không → DỪNG, in "G1 chưa passed — `/ae-kit:approve G1` trước". `get GP_prototype.status` phải là `passed` hoặc `n/a`; `pending`/`blocked` → DỪNG: "Khách chưa duyệt prototype — không plan trên màn hình chưa duyệt (`/ae-kit:prototype`)". Nhắc planner: task UI phải ghi S<n> trong tên hoặc Done: (ví dụ `Playwright: khớp S2`).
 
 ## Chạy
 Gọi subagent `ae-kit:planner` để tạo/cập nhật `spec/tasks.md`. Nhắc planner: mỗi task bắt buộc có 3 dòng `↔`, `Done:`, `Files:`; task đầu tiên phải ghi rõ là vertical slice đi xuyên mọi tầng.

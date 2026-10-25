@@ -14,11 +14,16 @@ Các template nằm trong `${CLAUDE_SKILL_DIR}/templates/`:
 | discovery.md | intake T<n> | `spec/discovery-T<n>.md` | spec |
 | discovery-codebase.md | intake C<n> (brownfield) | `spec/discovery-C<n>.md` | spec |
 | requirements.md | specify | `spec/requirements.md` | spec |
+| screens.md | prototype | `spec/prototype/screens.md` (+ `P<v>/` màn hình, `demo-P<v>.md`) | spec (artifact khách duyệt, không phải mã) |
+| approval.md | prototype approve | `spec/prototype/approval-P<v>.md` | spec (bằng chứng GP) |
 | design.md | design | `spec/design.md` | spec |
 | tasks.md | plan | `spec/tasks.md` | spec |
 | sprint-contract.md | contract | `spec/sprint-<N>.contract.md` | spec |
 | progress.md | init / next-task | `spec/progress.md` | handoff |
-| eval-report.md | evaluate | `spec/eval-sprint-<N>-r<k>.md` | spec |
+| eval-report.md | evaluate | `spec/eval-sprint-<N>-r<k>.md` (panel: `-p<i>` mỗi model, bản tổng hợp do `gates.py panel` ghi) | spec |
+| principles.md | init / ratchet mức 4 | `.ae-kit/principles.md` | principle (tầng 3, trigger riêng) |
+
+Tham chiếu dùng chung: `${CLAUDE_SKILL_DIR}/references/grilling.md` — cách hỏi theo vòng frontier (intake, lint-spec, contract).
 
 Quy ước chung của mọi artifact:
 - Placeholder dạng `{{NAME}}` phải được thay hết; không để sót.

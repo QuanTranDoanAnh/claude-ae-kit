@@ -16,7 +16,8 @@ Nếu `$G get G3_contract.sprint` ≠ `$0` → chạy `$G new-sprint` cho tới 
 ## Bước 1 — Generator đề xuất (chính bạn)
 Tạo `spec/sprint-$0.contract.md` từ template sprint-contract. Điền mục "Generator đề xuất":
 - Sẽ build gì (theo task của sprint).
-- Verify bằng gì: lệnh cụ thể + kỳ vọng cụ thể.
+- **Seam** (bảng Seam): nơi test sẽ quan sát hành vi — ưu tiên seam cao nhất còn chạy được trong CI, càng ít càng tốt (lý tưởng là 1–2); nêu prior art (test tương tự đã có trong repo, tìm bằng Grep). Đọc `ae-kit:principle-test-behavior-not-implementation` trước khi đề xuất. Seam là quyết định của người ở bước 3; `next-task` không được mở seam mới.
+- Verify bằng gì: lệnh cụ thể + kỳ vọng cụ thể, mỗi tiêu chí gắn một seam.
 - Giả định đang dựa vào: liệt kê thẳng thắn, kể cả giả định "hiển nhiên".
 
 ## Bước 2 — Evaluator phản biện (lặp có giới hạn)
@@ -26,7 +27,7 @@ Gọi subagent `ae-kit:contract-reviewer` lên file contract. Nó điền mục 
 - `agreed: true` và `unobservable` rỗng → `$G set G3_contract.checks.reviewer_agreed true` và `$G set G3_contract.checks.criteria_observable true`.
 
 ## Bước 3 — Người dùng là trọng tài
-Trình bày các mục "Cần chốt" dưới dạng câu hỏi lựa chọn (A/B kèm hệ quả). Chờ người dùng quyết. Ghi quyết định vào bảng "Chốt", đặt ngưỡng cứng cho mọi tiêu chí liên quan invariant. Budget vòng fix của G4 = `$G get G4_evidence.max_retries` (mặc định 3); ghi vào contract.
+Trình bày các mục "Cần chốt" dưới dạng câu hỏi lựa chọn (A/B kèm hệ quả), theo vòng của `${CLAUDE_PLUGIN_ROOT}/skills/spec-templates/references/grilling.md` §3 (`yes` = chấp nhận đề xuất). Bảng Seam cũng là một mục cần chốt: "Test ở S1 (api) và S2 (unit slots)? yes = đồng ý". Chờ người dùng quyết. Ghi quyết định vào bảng "Chốt", đặt ngưỡng cứng cho mọi tiêu chí liên quan invariant. Budget vòng fix của G4 = `$G get G4_evidence.max_retries` (mặc định 3); ghi vào contract.
 
 ## Kết thúc
 `$G set G3_contract.evidence spec/sprint-$0.contract.md` rồi `$G pass G3`. Không bắt đầu implement trong lệnh này. In: "Contract sprint $0 đã chốt (G3 passed). Chạy `/ae-kit:next-task` để bắt đầu."

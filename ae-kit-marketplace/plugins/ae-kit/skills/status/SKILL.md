@@ -15,4 +15,4 @@ echo "== latest eval =="; ls -t spec/eval-sprint-* 2>/dev/null | head -1 | xargs
 
 Trình bày lại cho người dùng **đúng** khối output của `gates.py show` (không viết lại bằng văn xuôi, không thêm gate), rồi tối đa 3 dòng bổ sung nếu bạn thấy ô máy có vẻ cũ so với artifact (ví dụ `every_R_has_task: true` nhưng số R accepted vừa tăng) → ghi "ô có thể cũ — chạy lại `/ae-kit:plan`". KHÔNG tự sửa `gates.yaml`.
 
-Ký hiệu: `[✓]` passed · `[✗]` blocked · `[~]` sẵn sàng (gate trước đã passed) · `[ ]` chưa tới lượt.
+Ký hiệu: `[✓]` passed · `[✗]` blocked · `[~]` sẵn sàng (gate trước đã passed) · `[ ]` chưa tới lượt · `[–]` n/a (GP khi dự án không có UI).
