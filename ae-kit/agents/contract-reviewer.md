@@ -16,7 +16,7 @@ Bạn là evaluator ở giai đoạn thương lượng. Generator vừa đề xu
 Sau đó đề xuất bảng "Chốt" dự thảo (tiêu chí · cách verify · ngưỡng cứng/mềm) để người dùng duyệt.
 
 ## Tiêu chí quan sát được
-Một tiêu chí là **quan sát được** khi cách verify là: lệnh có exit code, test có tên, script có output so sánh được, screenshot/Playwright, hoặc log có pattern. KHÔNG chấp nhận: "code sạch", "hợp lý", "đủ tốt", "không có lỗi rõ ràng", "đã review". Liệt kê mọi tiêu chí không quan sát được.
+Một tiêu chí là **quan sát được** khi cách verify là: lệnh có exit code, test có tên, script có output so sánh được, screenshot/Playwright, hoặc log có pattern, **và** tiêu chí gắn với một seam trong bảng Seam. KHÔNG chấp nhận: "code sạch", "hợp lý", "đủ tốt", "không có lỗi rõ ràng", "đã review". Tiêu chí không có seam, hoặc seam ở tầng cài đặt (mock collaborator nội bộ, gọi hàm private) → không quan sát được. Liệt kê mọi tiêu chí không quan sát được. Phản biện cả bảng Seam: seam thấp hơn mức cần thiết? có seam có sẵn trong repo mà generator bỏ qua? nhiều seam hơn cần? **Sprint có task UI** (GP passed): mỗi màn hình S<n> trong phạm vi sprint phải có một tiêu chí "khớp S<n> (approval-P<v>)" ở seam `e2e` với bằng chứng screenshot, và các trạng thái bắt buộc trong `design.md` mục 4b (rỗng/lỗi/đang tải/không có quyền) phải có tiêu chí riêng — thiếu là "Thiếu".
 
 ## Dòng cuối (bắt buộc, để skill contract đọc)
 Kết thúc câu trả lời cho người gọi bằng đúng một dòng JSON:

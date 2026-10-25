@@ -1,6 +1,7 @@
 # spec/gates.yaml — nguồn sự thật về trạng thái quality gate. Sửa qua scripts/gates.py, không sửa tay.
 # Ô "checks" do skill ghi SAU KHI kiểm tra thật. approved_by chỉ do /ae-kit:approve ghi, và chỉ khi mọi ô true.
-# status: pending | blocked | passed.  G1/G2/G5 người duyệt; G3/G4 máy/agent.
+# status: pending | blocked | passed | n/a.  G1/GP/G2/G5 người duyệt (GP: KHÁCH duyệt prototype, consultant ghi nhận); G3/G4 máy/agent.
+# GP_prototype: dự án không có UI → status: n/a (init hỏi). Đổi: scripts/gates.py set GP_prototype.status pending|n/a
 
 project: "{{PROJECT_NAME}}"
 current_sprint: 1
@@ -13,6 +14,20 @@ G1_spec:
     observed_classified: true
   approved_by: null
   approved_at: null
+  evidence: null
+GP_prototype:
+  status: pending
+  checks:
+    every_R_has_screen_or_declared: false
+    every_screen_has_R: false
+    first_slice_flow: false
+    screen_files_exist: false
+    approval_recorded: false
+    demo_q_classified: false
+  version: null
+  approved_by: null
+  approved_at: null
+  req_fingerprint: null
   evidence: null
 G2_plan:
   status: pending
@@ -41,8 +56,12 @@ G4_evidence:
     check_cmd: null
     e2e: null
     evaluator_pass_per_R: null
+    panel_agree: null
   retries: 0
   max_retries: 3
+  panel:
+    models: [opus, sonnet]
+    min_agree: 2
   evidence: null
 G5_merge:
   sprint: 1

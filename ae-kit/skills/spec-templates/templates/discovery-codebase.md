@@ -13,10 +13,10 @@ Nguồn: commit `{{COMMIT}}` · đã đọc: {{FILES_READ}} · ngày {{DATE}}
 
 <!-- Loại "documented" = quyết định đã được ghi trong README/docs; vẫn cần người xác nhận còn hiệu lực. -->
 
-## 2. Câu hỏi cho chủ dự án (mỗi O chưa rõ → đúng một câu)
-| ID | Liên quan | Câu hỏi | Vì sao quan trọng | Giả định mặc định nếu không trả lời | Nhãn |
-|----|-----------|---------|-------------------|--------------------------------------|------|
-| Q1 | O1 | | | A1: | send / assume / defer |
+## 2. Câu hỏi cho chủ dự án (mỗi O chưa rõ → đúng một câu; chỉ QUYẾT ĐỊNH, sự thật thì tự tra — references/grilling.md)
+| ID | Liên quan | Câu hỏi | Vì sao quan trọng | Giả định mặc định nếu không trả lời | Sau Q | Nhãn |
+|----|-----------|---------|-------------------|--------------------------------------|-------|------|
+| Q1 | O1 | | | A1: | | send / assume / defer |
 
 ## 3. Những gì codebase KHÔNG nói (phải hỏi người, không đoán)
 - Ai là người dùng, mục tiêu kinh doanh → mission.md

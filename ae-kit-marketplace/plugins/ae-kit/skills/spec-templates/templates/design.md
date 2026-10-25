@@ -24,6 +24,17 @@ Entity { field: type, ... }  — mô tả 1 dòng, trạng thái nếu có
 |----|----------|----------------|-----|
 | I1 | ... | DB (unique index) | R2.2 |
 
+## 4b. UX (chỉ dự án có UI — tham chiếu prototype đã khách duyệt ở GP)
+<!-- Nguồn: spec/prototype/screens.md P<v> đã duyệt + approval-P<v>.md. Không vẽ lại màn hình ở đây; nói LUỒNG, TRẠNG THÁI, RÀNG BUỘC.
+     Mỗi dòng ↔ R; trạng thái là nơi agent hay bỏ sót nhất → evaluator chấm theo bảng này + screenshot so với S<n>. -->
+Prototype duyệt: P{{V}} (approval-P{{V}}.md) · Design system / component library: {{DS}} (nguồn: D<n> hoặc [C<n> O<m>])
+
+| Luồng | Màn hình (S<n>) | Trạng thái bắt buộc có | Ràng buộc (i18n / a11y / thiết bị / quyền) | ↔ R |
+|-------|-----------------|------------------------|--------------------------------------------|-----|
+| Đặt lịch | S1 → S2 → S3 | rỗng · lỗi · đang tải · không có quyền | mobile-first; vi/en | R1.1–R1.3 |
+
+Tái dùng từ prototype: KHÔNG (mặc định) / D<n>: ... (nêu rõ phần nào, vì sao)
+
 ## 5. Quyết định thiết kế (ADR rút gọn)
 | ID | Quyết định | Lý do | Thay thế đã cân nhắc |
 |----|------------|-------|----------------------|

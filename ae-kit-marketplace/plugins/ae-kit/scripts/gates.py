@@ -11,12 +11,16 @@ Lệnh:
   get <path>                   ví dụ: get G1_spec.status
   set <path> <value>           value: true|false|null|<số>|<chuỗi>  (chỉ cho skill ghi ô máy)
   incr <path>                  tăng số (rounds, retries); tự chuyển blocked khi vượt max_*
-  compute G1|G2|G4|G5          tính lại ô máy từ artifact thật và ghi vào gates.yaml
-  approve G1|G2|G5 <who> [--force "<lý do>"]
+  compute G1|GP|G2|G4|G5       tính lại ô máy từ artifact thật và ghi vào gates.yaml
+  approve G1|GP|G2|G5 <who> [--force "<lý do>"]
                                duyệt tay; từ chối nếu còn ô máy chưa true (trừ --force)
   pass G3|G4                   đặt gate máy sang passed (sau khi mọi ô true) — gọi từ contract/evaluate
+  panel [N] [k]                tổng hợp TẤT ĐỊNH các báo cáo evaluator của panel đa model
+                               (spec/eval-sprint-N-r<k>-p<i>.md) thành spec/eval-sprint-N-r<k>.md,
+                               tính Verdict theo G4_evidence.panel.min_agree, ghi checks.panel_agree
   next                         in đúng một lệnh /ae-kit:... nên chạy tiếp
   new-sprint                   current_sprint += 1, reset G3/G4/G5
+Gate GP (Prototype, khách duyệt) nằm giữa G1 và G2; dự án không có UI: `set GP_prototype.status n/a`.
 Exit code: 0 ok · 1 lỗi tham số/file · 2 gate không đạt (để skill dừng).
 """
 import os, re, sys, glob, subprocess, datetime, json
@@ -37,8 +41,16 @@ def _find_root():
     return cwd
 ROOT = _find_root()
 GATES = os.path.join(ROOT, "spec", "gates.yaml")
-ORDER = ["G1_spec", "G2_plan", "G3_contract", "G4_evidence", "G5_merge"]
-HUMAN = {"G1_spec", "G2_plan", "G5_merge"}
+ORDER = ["G1_spec", "GP_prototype", "G2_plan", "G3_contract", "G4_evidence", "G5_merge"]
+HUMAN = {"G1_spec", "GP_prototype", "G2_plan", "G5_merge"}
+
+def _status(d, g):
+    """Trạng thái gate; GP thiếu trong gates.yaml cũ (v0.3) → n/a. n/a được coi là đã qua khi xét thứ tự."""
+    if g not in d: return "n/a" if g == "GP_prototype" else "pending"
+    return d.get(g, {}).get("status", "pending")
+
+def _ok_prev(d, g):
+    return _status(d, g) in ("passed", "n/a")
 
 # ---------- YAML tối giản ----------
 def _scalar(s):
@@ -137,6 +149,12 @@ def _latest(pattern):
     fs = sorted(glob.glob(os.path.join(ROOT, pattern)), key=os.path.getmtime)
     return fs[-1] if fs else None
 
+def _req_fingerprint():
+    """Dấu vân tay các dòng R/N accepted (nội dung + trạng thái) — để GP phát hiện spec đổi sau khi khách duyệt."""
+    import hashlib
+    rows = re.findall(r"^\|\s*[RN]\d+(?:\.\d+)?\s*\|.*\|\s*$", _read("spec/requirements.md"), re.M)
+    return hashlib.sha1("\n".join(r.strip() for r in rows).encode("utf-8")).hexdigest()[:12]
+
 def req_ids(text, accepted_only=False):
     ids = set()
     for m in re.finditer(r"^\|\s*([RN]\d+(?:\.\d+)?)\s*\|.*?\|\s*([a-z]+)\s*\|\s*$", text, re.M):
@@ -159,7 +177,7 @@ def compute(data, gate):
         unl = 0
         for f in glob.glob(os.path.join(ROOT, "spec", "discovery-*.md")):
             for m in re.finditer(r"^\|\s*Q\d+\s*\|(.*)\|\s*$", open(f, encoding="utf-8").read(), re.M):
-                if not re.search(r"\|\s*(send|assume|defer)\s*\|\s*$", m.group(0)): unl += 1
+                if not re.search(r"\|\s*(send|assume|defer|prototype)\s*\|\s*$", m.group(0)): unl += 1
         c["open_q_classified"] = unl == 0
         if unl: notes.append(f"{unl} câu hỏi Q chưa có nhãn send/assume/defer")
         uno = 0
@@ -168,6 +186,71 @@ def compute(data, gate):
         c["observed_classified"] = uno == 0
         if uno: notes.append(f"{uno} quan sát O chưa phân loại (brownfield)")
         if lint: data[gate]["evidence"] = os.path.relpath(lint, ROOT)
+    elif gate == "GP_prototype":
+        req = _read("spec/requirements.md")
+        accepted = req_ids(req, accepted_only=True)
+        scr = _read("spec/prototype/screens.md")
+        if not scr:
+            notes.append("chưa có spec/prototype/screens.md → /ae-kit:prototype")
+        rows = re.findall(r"^\|\s*(S\d+)\s*\|([^\n]*)$", scr, re.M)
+        covered, no_r = set(), []
+        for sid, rest in rows:
+            cells = [c.strip() for c in rest.split("|")]
+            ids = set(re.findall(r"\b[RN]\d+(?:\.\d+)?\b", cells[1] if len(cells) > 1 else ""))
+            if not ids: no_r.append(sid)
+            covered |= ids
+        noui = re.search(r"^## (?:\d+[.)]?\s*)?R không có UI[^\n]*\n([\s\S]*?)(?=^## |\Z)", scr, re.M)
+        declared = set(re.findall(r"\b[RN]\d+(?:\.\d+)?\b", noui.group(1))) if noui else set()
+        unclassified = sorted(accepted - covered - declared)
+        c["every_R_has_screen_or_declared"] = bool(rows) and not unclassified
+        if unclassified: notes.append("R chưa có màn hình và chưa khai 'không có UI': " + ", ".join(unclassified))
+        c["every_screen_has_R"] = bool(rows) and not no_r
+        if no_r: notes.append("màn hình không ↔ R nào (scope creep?): " + ", ".join(no_r))
+        flow = re.search(r"^## (?:\d+[.)]?\s*)?Luồng task đầu[^\n]*\n([\s\S]*?)(?=^## |\Z)", scr, re.M)
+        flow_ids = re.findall(r"\bS\d+\b", flow.group(1)) if flow else []
+        sids = {sid for sid, _ in rows}
+        missing_s = [x for x in flow_ids if x not in sids]
+        c["first_slice_flow"] = len(flow_ids) >= 2 and not missing_s
+        if len(flow_ids) < 2: notes.append("mục 'Luồng task đầu' cần ≥ 2 màn hình theo thứ tự click")
+        if missing_s: notes.append("luồng trỏ tới màn hình không có trong bảng: " + ", ".join(missing_s))
+        files_missing = []
+        for sid, rest in rows:
+            m = re.search(r"`([^`]+)`", rest)
+            if m and not os.path.exists(os.path.join(ROOT, "spec", "prototype", m.group(1))) and not m.group(1).startswith(("http://", "https://")):
+                files_missing.append(f"{sid}:{m.group(1)}")
+        c["screen_files_exist"] = bool(rows) and not files_missing
+        if files_missing: notes.append("file màn hình không tồn tại: " + ", ".join(files_missing))
+        ap = _latest("spec/prototype/approval-P*.md")
+        if ap:
+            at = open(ap, encoding="utf-8").read()
+            pv = re.search(r"^Prototype:\s*(P\d+)", at, re.M)
+            tr = re.search(r"^Transcript:\s*(T\d+)", at, re.M)
+            conf = re.search(r"^Xác nhận mô hình:\s*(yes|có)", at, re.M | re.I)
+            ok = bool(pv and tr and conf)
+            if tr and not os.path.exists(os.path.join(ROOT, "spec", f"discovery-{tr.group(1)}.md")):
+                ok = False; notes.append(f"approval trỏ tới {tr.group(1)} nhưng chưa có spec/discovery-{tr.group(1)}.md → /ae-kit:intake {tr.group(1)}")
+            if not pv: notes.append("approval thiếu dòng `Prototype: P<v>`")
+            if not tr: notes.append("approval thiếu dòng `Transcript: T<n>` (buổi duyệt phải là một transcript)")
+            if not conf: notes.append("approval thiếu `Xác nhận mô hình: yes` (khách đã được nói rõ đây là mô hình, không phải phần mềm)")
+            if ok and data[gate].get("stale_approval") == os.path.relpath(ap, ROOT):
+                ok = False; notes.append(f"approval {os.path.basename(ap)} đã cũ (spec đổi sau khi khách duyệt) → cần approval mới (P<v+1> hoặc buổi xác nhận lại T<n>)")
+            c["approval_recorded"] = ok
+            unl = 0
+            if tr and os.path.exists(os.path.join(ROOT, "spec", f"discovery-{tr.group(1)}.md")):
+                for m in re.finditer(r"^\|\s*Q\d+\s*\|(.*)\|\s*$", open(os.path.join(ROOT, "spec", f"discovery-{tr.group(1)}.md"), encoding="utf-8").read(), re.M):
+                    if not re.search(r"\|\s*(send|assume|defer|prototype)\s*\|\s*$", m.group(0)): unl += 1
+            c["demo_q_classified"] = unl == 0
+            if unl: notes.append(f"{unl} câu hỏi Q phát sinh ở buổi demo chưa có nhãn")
+            if ok: data[gate]["evidence"] = os.path.relpath(ap, ROOT)
+        else:
+            c["approval_recorded"] = False; c["demo_q_classified"] = False
+            notes.append("chưa có spec/prototype/approval-P<v>.md (khách chưa duyệt)")
+        # drift: spec đổi sau khi khách duyệt → về pending
+        fp = _req_fingerprint()
+        if data[gate].get("status") == "passed" and data[gate].get("req_fingerprint") and data[gate]["req_fingerprint"] != fp:
+            c["approval_recorded"] = False
+            data[gate]["stale_approval"] = data[gate].get("evidence")
+            notes.append("requirements.md đã đổi sau khi khách duyệt prototype → cần demo lại hoặc khách xác nhận lại (approval mới)")
     elif gate == "G2_plan":
         req = _read("spec/requirements.md"); tasks = _read("spec/tasks.md")
         accepted = req_ids(req, accepted_only=True)
@@ -215,7 +298,7 @@ def compute(data, gate):
         else:
             c["e2e"] = "n/a"
         n = data[gate].get("sprint") or data.get("current_sprint")
-        ev = _latest(f"spec/eval-sprint-{n}-r*.md")
+        ev = _latest_synth(n)
         if ev:
             txt = open(ev, encoding="utf-8").read()
             c["evaluator_pass_per_R"] = bool(re.search(r"^Verdict:\s*\**PASS", txt, re.M))
@@ -223,6 +306,17 @@ def compute(data, gate):
             if not c["evaluator_pass_per_R"]: notes.append(f"evaluator FAIL: {os.path.basename(ev)}")
         else:
             notes.append("chưa có eval-sprint-*.md → /ae-kit:evaluate")
+        models = _panel_models(data)
+        if not models:
+            c["panel_agree"] = "n/a"
+        else:
+            rounds = _eval_rounds(n)
+            kp = max([k for k in rounds if rounds[k]["panel"]] or [0])
+            ks = max([k for k in rounds if rounds[k]["synth"]] or [0])
+            if kp == 0 or kp > ks or c.get("panel_agree") not in (True, False):
+                # panel bật nhưng vòng mới nhất chưa được tổng hợp (chưa chạy `gates.py panel`)
+                c["panel_agree"] = False
+                notes.append(f"panel {len(models)} model bật nhưng vòng mới nhất chưa tổng hợp → `gates.py panel {n}` sau khi mọi evaluator xong")
     elif gate == "G5_merge":
         tasks = _read("spec/tasks.md")
         n = data[gate].get("sprint") or data.get("current_sprint")
@@ -255,6 +349,102 @@ def compute(data, gate):
             c["spec_diff_present_if_behavior_changed"] = True
     return notes
 
+# ---------- panel đa model (G4 tầng 2) ----------
+def _panel_models(d):
+    m = getp(d, "G4_evidence.panel.models")
+    return [str(x) for x in m] if isinstance(m, list) else []
+
+def _eval_rounds(n):
+    """{k: {"synth": path|None, "panel": {i: path}}} cho sprint n."""
+    rounds = {}
+    for f in glob.glob(os.path.join(ROOT, "spec", f"eval-sprint-{n}-r*.md")):
+        m = re.search(rf"eval-sprint-{n}-r(\d+)(?:-p(\d+))?\.md$", os.path.basename(f))
+        if not m: continue
+        k = int(m.group(1)); r = rounds.setdefault(k, {"synth": None, "panel": {}})
+        if m.group(2): r["panel"][int(m.group(2))] = f
+        else: r["synth"] = f
+    return rounds
+
+def _latest_synth(n):
+    rounds = _eval_rounds(n)
+    ks = [k for k in sorted(rounds) if rounds[k]["synth"]]
+    return rounds[ks[-1]]["synth"] if ks else None
+
+def _parse_eval(path):
+    txt = open(path, encoding="utf-8").read()
+    v = re.search(r"^Verdict:\s*\**\s*(PASS|FAIL)", txt, re.M)
+    model = re.search(r"^Model:\s*(\S+)", txt, re.M)
+    rows = {}
+    for m in re.finditer(r"^\|\s*([^|]+?)\s*\|\s*([^|]*?)\s*\|\s*\**(PASS|FAIL)\**\s*\|", txt, re.M):
+        crit = m.group(1).strip()
+        if crit.lower() in ("criterion", "tiêu chí", "---") or crit.startswith("-"): continue
+        rows[crit] = {"kind": m.group(2).strip().lower(), "result": m.group(3)}
+    ratchet = re.search(r"^## Đề xuất ratchet[^\n]*\n([\s\S]*?)(?=^## |\Z)", txt, re.M)
+    lines = [l for l in (ratchet.group(1).split("\n") if ratchet else []) if l.strip().startswith("- ") and l.strip() != "- ..."]
+    return {"verdict": v.group(1) if v else None, "model": model.group(1) if model else "?", "rows": rows, "ratchet": lines}
+
+def panel(d, n=None, k=None):
+    n = n or d.get("G4_evidence", {}).get("sprint") or d.get("current_sprint")
+    models = _panel_models(d)
+    if not models:
+        print("G4_evidence.panel.models rỗng — không có panel; evaluator đơn ghi thẳng spec/eval-sprint-N-r<k>.md."); return 1
+    rounds = _eval_rounds(n)
+    ks = [kk for kk in sorted(rounds) if rounds[kk]["panel"]]
+    if not ks: print(f"chưa có spec/eval-sprint-{n}-r<k>-p<i>.md nào"); return 1
+    k = int(k) if k else ks[-1]
+    files = rounds.get(k, {}).get("panel", {})
+    reports = {i: _parse_eval(p) for i, p in sorted(files.items())}
+    expected = len(models)
+    if len(reports) < expected:
+        print(f"panel chưa đủ: {len(reports)}/{expected} báo cáo cho sprint {n} vòng {k} (chờ evaluator còn lại)"); return 2
+    missing_v = [i for i, r in reports.items() if not r["verdict"]]
+    if missing_v: print("báo cáo thiếu dòng `Verdict:` : " + ", ".join(f"p{i}" for i in missing_v)); return 2
+    min_agree = getp(d, "G4_evidence.panel.min_agree") or expected
+    n_pass = sum(1 for r in reports.values() if r["verdict"] == "PASS")
+    crits = []
+    for r in reports.values():
+        for c in r["rows"]:
+            if c not in crits: crits.append(c)
+    hard_fail, disagree = [], []
+    for c in crits:
+        res = {i: r["rows"].get(c, {}).get("result", "—") for i, r in reports.items()}
+        kinds = {r["rows"].get(c, {}).get("kind", "") for r in reports.values() if c in r["rows"]}
+        fails = [i for i, x in res.items() if x == "FAIL"]
+        hard = bool(re.match(r"^I\d+", c)) or any(("invariant" in kd) or ("cứng" in kd) for kd in kinds)
+        if fails and hard: hard_fail.append((c, fails))
+        if fails and len(fails) < len(reports): disagree.append((c, res))
+    verdict = "PASS" if (n_pass >= min_agree and not hard_fail) else "FAIL"
+    # viết báo cáo tổng hợp — tất định, không có lời giải thích của generator
+    out = [f"# Evaluation — Sprint {n} — vòng {k} (panel {len(reports)} model)", "",
+           f"Verdict: **{verdict}**  (tổng hợp bởi gates.py panel: {n_pass}/{len(reports)} PASS, cần ≥ {min_agree}; invariant/ngưỡng cứng FAIL bởi bất kỳ model nào → FAIL)", "",
+           "| Evaluator | Model | Verdict | Báo cáo |", "|---|---|---|---|"]
+    for i, r in reports.items():
+        out.append(f"| p{i} | {r['model']} | {r['verdict']} | {os.path.relpath(files[i], ROOT)} |")
+    out += ["", "## Tiêu chí × model", "", "| Criterion | " + " | ".join(f"p{i}" for i in reports) + " | Kết luận |", "|---|" + "---|" * len(reports) + "---|"]
+    for c in crits:
+        res = [reports[i]["rows"].get(c, {}).get("result", "—") for i in reports]
+        concl = "FAIL" if "FAIL" in res else "PASS"
+        if "FAIL" in res and "PASS" in res: concl += " (bất đồng)"
+        out.append(f"| {c} | " + " | ".join(res) + f" | {concl} |")
+    out += ["", "## Bất đồng (người xem ở G5)"]
+    out += [f"- {c}: " + ", ".join(f"p{i}={x}" for i, x in res.items()) for c, res in disagree] or ["- (không)"]
+    if hard_fail:
+        out += ["", "## Invariant / ngưỡng cứng FAIL"] + [f"- {c}: FAIL bởi " + ", ".join(f"p{i}" for i in fs) for c, fs in hard_fail]
+    out += ["", "## Đề xuất ratchet (gộp từ mọi evaluator, chưa khử trùng lặp)"]
+    seen = set()
+    for r in reports.values():
+        for l in r["ratchet"]:
+            if l.strip() not in seen: seen.add(l.strip()); out.append(l.strip())
+    if not seen: out.append("- (không)")
+    synth = os.path.join(ROOT, "spec", f"eval-sprint-{n}-r{k}.md")
+    open(synth, "w", encoding="utf-8").write("\n".join(out) + "\n")
+    setp(d, "G4_evidence.checks.panel_agree", n_pass >= min_agree)
+    setp(d, "G4_evidence.panel.last", f"sprint {n} r{k}: {n_pass}/{len(reports)} PASS, {len(disagree)} bất đồng, {len(hard_fail)} hard FAIL")
+    print(f"panel sprint {n} vòng {k}: Verdict {verdict} ({n_pass}/{len(reports)} PASS, cần ≥ {min_agree}) → {os.path.relpath(synth, ROOT)}")
+    for c, res in disagree: print(f"  - bất đồng {c}: " + ", ".join(f"p{i}={x}" for i, x in res.items()))
+    for c, fs in hard_fail: print(f"  - hard FAIL {c} bởi " + ", ".join(f"p{i}" for i in fs))
+    return 0 if verdict == "PASS" else 2
+
 def all_true(d, gate):
     chk = d.get(gate, {}).get("checks", {})
     return all(v is True or v == "pass" or v == "n/a" for v in chk.values()) and bool(chk)
@@ -266,6 +456,7 @@ def failing(d, gate):
 SYM = {"passed": "[✓]", "blocked": "[✗]", "pending": "[ ]"}
 NEXT = {
     "G1_spec": lambda d: "/ae-kit:lint-spec" if not d["G1_spec"].get("evidence") else ("/ae-kit:approve G1" if all_true(d, "G1_spec") else "/ae-kit:lint-spec (sửa ô đỏ rồi chạy lại)"),
+    "GP_prototype": lambda d: "/ae-kit:prototype" if not os.path.exists(os.path.join(ROOT, "spec", "prototype", "screens.md")) else ("/ae-kit:approve GP \"<tên khách>\"" if all_true(d, "GP_prototype") else "/ae-kit:prototype (sửa ô đỏ; demo cho khách; /ae-kit:intake T<n> buổi duyệt)"),
     "G2_plan": lambda d: "/ae-kit:approve G2" if all_true(d, "G2_plan") else "/ae-kit:plan",
     "G3_contract": lambda d: f"/ae-kit:contract {d.get('current_sprint') or 1}",
     "G4_evidence": lambda d: "/ae-kit:next-task (nếu còn task) rồi /ae-kit:evaluate " + str(d.get("current_sprint") or 1),
@@ -274,7 +465,8 @@ NEXT = {
 
 def next_cmd(d):
     for g in ORDER:
-        st = d.get(g, {}).get("status", "pending")
+        st = _status(d, g)
+        if st == "n/a": continue
         if st == "blocked":
             if g == "G4_evidence": return "G4 BLOCKED (vượt retry) — người quyết: sửa spec / chia nhỏ task / /ae-kit:ratchet, rồi `gates.py set G4_evidence.status pending`"
             if g == "G3_contract": return "G3 BLOCKED (vượt rounds) — người chốt tiêu chí tranh cãi trong contract, rồi `gates.py set G3_contract.status pending`"
@@ -288,18 +480,23 @@ def show(d):
     print(f"ae-kit status — {proj} · sprint {sp} · branch {br}\n")
     prev_ok = True
     for g in ORDER:
-        gd = d.get(g, {}); st = gd.get("status", "pending")
+        gd = d.get(g, {}); st = _status(d, g)
         sym = SYM.get(st, "[ ]")
         if st == "pending" and prev_ok: sym = "[~]"
         label = g.split("_")[0] + " " + g.split("_")[1].capitalize()
         extra = ""
+        if st == "n/a":
+            print(f"[–] {label:<14} n/a (dự án không có UI hoặc gates.yaml v0.3)"); prev_ok = True; continue
         if st == "passed": extra = f"passed {gd.get('approved_at','')} ({gd.get('approved_by','auto')})"
         elif st == "blocked": extra = "BLOCKED  " + "; ".join(gd.get("blocked_by") or failing(d, g))
         else:
             f = failing(d, g)
             extra = ("chờ " + ", ".join(f)) if f else "pending"
             if g == "G3_contract": extra += f"  rounds {gd.get('rounds',0)}/{gd.get('max_rounds',3)}"
-            if g == "G4_evidence": extra += f"  retries {gd.get('retries',0)}/{gd.get('max_retries',3)}"
+            if g == "G4_evidence":
+                extra += f"  retries {gd.get('retries',0)}/{gd.get('max_retries',3)}"
+                pm = _panel_models(d)
+                extra += f"  panel {','.join(pm)} ≥{getp(d,'G4_evidence.panel.min_agree') or len(pm)}" if pm else "  panel off"
         print(f"{sym} {label:<14} {extra}")
         prev_ok = st == "passed"
     print()
@@ -324,8 +521,8 @@ def show(d):
 def short(d):
     s = []
     for g in ORDER:
-        st = d.get(g, {}).get("status", "pending")
-        s.append(g.split("_")[0] + " " + {"passed": "✓", "blocked": "✗ BLOCKED"}.get(st, "·"))
+        st = _status(d, g)
+        s.append(g.split("_")[0] + " " + {"passed": "✓", "blocked": "✗ BLOCKED", "n/a": "–"}.get(st, "·"))
     print("ae-kit gates: " + "  ".join(s) + f"  → {next_cmd(d)}")
 
 # ---------- main ----------
@@ -345,7 +542,10 @@ def main(argv):
         if mx and v >= mx: setp(d, gate + ".status", "blocked"); print(f"{gate} BLOCKED: {v}/{mx}")
         save(header, d); print(f"{args[0]} = {v}"); return 0
     if cmd == "compute":
-        g = _gate(args[0]); notes = compute(d, g)
+        g = _gate(args[0])
+        if g == "GP_prototype" and _status(d, g) == "n/a":
+            print("GP n/a — không tính (bật bằng `set GP_prototype.status pending`)"); return 0
+        notes = compute(d, g)
         f = failing(d, g)
         if f and d[g].get("status") == "passed":
             d[g]["status"] = "pending"; d[g].pop("approved_by", None); d[g].pop("approved_at", None)
@@ -354,6 +554,9 @@ def main(argv):
         print(f"{g}: " + ("tất cả ô xanh" if not f else "ô đỏ: " + ", ".join(f)))
         for n in notes: print("  - " + n)
         return 0 if not f else 2
+    if cmd == "panel":
+        rc = panel(d, args[0] if args else None, args[1] if len(args) > 1 else None)
+        save(header, d); return rc
     if cmd == "pass":
         g = _gate(args[0])
         if g in HUMAN: print(f"{g} là gate người duyệt — dùng approve"); return 1
@@ -366,12 +569,17 @@ def main(argv):
         if "--force" in args: force = args[args.index("--force") + 1] if args.index("--force") + 1 < len(args) else "no reason"
         if g not in HUMAN: print(f"{g} là gate máy — dùng pass"); return 1
         idx = ORDER.index(g)
-        if idx > 0 and d.get(ORDER[idx-1], {}).get("status") != "passed":
+        if idx > 0 and not _ok_prev(d, ORDER[idx-1]):
             print(f"Gate trước ({ORDER[idx-1]}) chưa passed."); return 2
+        if g == "GP_prototype" and _status(d, g) == "n/a":
+            print("GP đang n/a (dự án không có UI) — `gates.py set GP_prototype.status pending` nếu muốn bật."); return 1
+        if g == "GP_prototype" and who in ("unknown", ""):
+            print("approve GP cần tên khách hàng/người đại diện đã duyệt: `approve GP \"<tên>\"`."); return 1
         f = failing(d, g)
         if f and not force:
             print(f"KHÔNG duyệt {g}: ô máy chưa xanh → " + ", ".join(f)); print("Sửa rồi chạy lại, hoặc --force \"<lý do>\"."); return 2
         d[g]["status"] = "passed"; d[g]["approved_by"] = who; d[g]["approved_at"] = today()
+        if g == "GP_prototype": d[g]["req_fingerprint"] = _req_fingerprint(); d[g].pop("stale_approval", None)
         if force: d[g]["forced"] = force
         save(header, d); print(f"{g} passed by {who}" + (f" (FORCED: {force})" if force else "")); return 0
     if cmd == "new-sprint":
@@ -379,12 +587,13 @@ def main(argv):
             print("G5 chưa passed — không mở sprint mới (dùng --force nếu cố ý bỏ sprint)."); return 2
         n = (d.get("current_sprint") or 0) + 1; d["current_sprint"] = n
         for g, keys in (("G3_contract", {"reviewer_agreed": False, "criteria_observable": False}),
-                        ("G4_evidence", {"check_cmd": None, "e2e": None, "evaluator_pass_per_R": None}),
+                        ("G4_evidence", {"check_cmd": None, "e2e": None, "evaluator_pass_per_R": None, "panel_agree": None}),
                         ("G5_merge", {"diff_within_contract": None, "spec_diff_present_if_behavior_changed": None, "no_file_outside_task_scope": None})):
             d[g].update({"sprint": n, "status": "pending", "checks": keys, "evidence": None})
             d[g].pop("approved_by", None); d[g].pop("approved_at", None); d[g].pop("forced", None)
             if "rounds" in d[g]: d[g]["rounds"] = 0
             if "retries" in d[g]: d[g]["retries"] = 0
+            if isinstance(d[g].get("panel"), dict): d[g]["panel"].pop("last", None)
         save(header, d); print(f"sprint {n}"); return 0
     print(f"lệnh không biết: {cmd}"); return 1
 

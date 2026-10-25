@@ -20,11 +20,11 @@ Repo là **brownfield** nếu có bất kỳ: `package.json`, `pyproject.toml`, 
 3. **docs/product/ (tầng context).** Copy `mission.md`, `tech.md`, `roadmap.md`, thay `{{PROJECT_NAME}}`, `{{STACK}}`, `{{CHECK_CMD}}`, `{{DATE}}` (hôm nay).
    - Greenfield: nếu không có `$3`, hỏi đúng 3 câu — (a) sản phẩm là gì trong 1 câu, (b) cho ai, (c) non-goal lớn nhất — rồi điền `mission.md` với `[src: owner <ngày>]`. Điền bảng Stack trong `tech.md` từ `$1`, cột Src = `owner <ngày>`.
    - Brownfield: để bảng Stack trong `tech.md` trống với ghi chú `<!-- điền từ discovery-C1 sau khi người xác nhận -->`; vẫn hỏi 3 câu cho mission.md (codebase không trả lời được "cho ai").
-4. **spec/gates.yaml.** Copy template `gates.yaml`, thay `{{PROJECT_NAME}}`. Brownfield: chạy `bash "${CLAUDE_PLUGIN_ROOT}/scripts/py" "${CLAUDE_PLUGIN_ROOT}/scripts/gates.py" set G1_spec.checks.observed_classified false`.
-5. Ghi `.ae-kit/check.cmd` chứa đúng một dòng: `$2` (hook post-edit và gates.py đọc file này).
+4. **spec/gates.yaml.** Copy template `gates.yaml`, thay `{{PROJECT_NAME}}`. Brownfield: chạy `bash "${CLAUDE_PLUGIN_ROOT}/scripts/py" "${CLAUDE_PLUGIN_ROOT}/scripts/gates.py" set G1_spec.checks.observed_classified false`. Hỏi đúng một câu: "Sản phẩm có giao diện người dùng không?" — không → `gates.py set GP_prototype.status n/a` (gate prototype bỏ qua); có → giữ `pending` và tạo thư mục `spec/prototype/`.
+5. Ghi `.ae-kit/check.cmd` chứa đúng một dòng: `$2` (hook post-edit và gates.py đọc file này). Copy template `principles.md` → `.ae-kit/principles.md` (bảng trigger principle riêng, ban đầu trống; thay `{{PROJECT_NAME}}`). Ghi `.ae-kit/tracker` chứa đúng một dòng `none` (đổi thành `github` để `/ae-kit:publish` đẩy task lên GitHub Issues qua `gh`).
 6. Ghi `spec/progress.md` từ template progress (thay placeholder; sprint 1, trạng thái "chưa bắt đầu").
 7. Ghi `spec/README.md` ngắn mô tả các file trong spec/ và thứ tự quy trình:
-   `intake (T<n> transcript | C<n> codebase) → specify → lint-spec → approve G1 → design → plan → approve G2 → contract (G3) → next-task ×n → evaluate (G4) → approve G5 → ratchet / replan`.
+   `intake (T<n> transcript | C<n> codebase) → specify → lint-spec → approve G1 → prototype → demo khách → intake T<n> → approve GP (khách) → design → plan → approve G2 → [publish] → contract (G3) → next-task ×n → evaluate (G4, panel) → approve G5 → ratchet / replan`.
 8. Ghi `intake/README.md`: transcript phải được khách đồng ý, đã che PII (tên, email, số điện thoại, số hợp đồng), đặt tên `T<n>-transcript.md`, KHÔNG sửa sau khi commit. Với codebase cũ không cần file trong intake/, chạy `/ae-kit:intake C1`.
 9. Nếu là git repo: KHÔNG thêm `.ae-kit/` vào `.gitignore` — `check.cmd` cần được commit để cả team dùng.
 10. Chạy `bash "${CLAUDE_PLUGIN_ROOT}/scripts/py" "${CLAUDE_PLUGIN_ROOT}/scripts/gates.py" show` để xác nhận 5 gate hiện đúng.

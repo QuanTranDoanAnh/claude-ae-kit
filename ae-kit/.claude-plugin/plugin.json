@@ -1,7 +1,7 @@
 {
   "name": "ae-kit",
-  "description": "Agentic Engineering kit: intake (transcript | brownfield codebase) → requirements (EARS, traceable) → design → tasks → sprint contract → one-task loop → independent evaluator → ratchet / replan. Two-layer constitution (rules vs product context) and 5 quality gates tracked in spec/gates.yaml by a deterministic script.",
-  "version": "0.2.0",
+  "description": "Agentic Engineering kit: intake (transcript | brownfield codebase) → requirements (EARS, traceable) → design → tasks → sprint contract → one-task loop → independent evaluator → ratchet / replan. Customer-approved UI prototype gate (GP, drift-guarded), three-layer constitution (rules vs product context vs situational principles), 5 quality gates tracked in spec/gates.yaml by a deterministic script, multi-model evaluator panel aggregated by machine, frontier-based question rounds, feature/bugfix/refactor playbooks with pre-agreed test seams, and optional GitHub Issues projection of tasks.",
+  "version": "0.4.0",
   "author": {
     "name": "Albert Tran",
     "email": "td.anhquan@gmail.com"
@@ -14,7 +14,11 @@
     "workflow",
     "quality-gates",
     "brownfield",
-    "constitution"
+    "constitution",
+    "multi-model-review",
+    "github-issues",
+    "prototype",
+    "ux"
   ],
   "license": "MIT"
 }
